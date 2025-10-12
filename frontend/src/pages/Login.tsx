@@ -1,0 +1,235 @@
+import React, { useState} from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { AlertTriangle, X } from 'lucide-react';
+
+interface LoginFormData {
+  email: string;
+  password: string;
+  role: 'doctor' | 'patient';
+}
+
+interface SuspensionInfo {
+  reason: string;
+  suspendedAt?: string;
+}
+
+const Login = () => {
+  const navigate = useNavigate();
+  const {login} = useApp();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [suspensionInfo, setSuspensionInfo] = useState<SuspensionInfo | null>(null);
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: '',
+    password: '',
+    role: 'patient'
+  });
+
+  // Clear any existing auth data on component mount
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      setError(null);
+      setSuspensionInfo(null);
+      
+      // First, perform login
+      console.log('formData');
+      console.log(formData);
+       
+      await login(formData);
+      
+    } catch (err: any) {
+      console.error('Login error:', err);
+      
+      // Check if account is suspended
+      if (err.response?.data?.suspended) {
+        setSuspensionInfo({
+          reason: err.response.data.suspensionReason,
+          suspendedAt: err.response.data.suspendedAt
+        });
+      } else {
+        setError(err.response?.data?.message || 'Invalid credentials');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            Or{' '}
+            <button
+              onClick={() => navigate('/signup')}
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+            >
+              create a new account
+            </button>
+          </p>
+        </div>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+              <span className="block sm:inline">{error}</span>
+            </div>
+          )}
+
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                placeholder="Email address"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="role" className="sr-only">
+                Role
+              </label>
+              <select
+                id="role"
+                name="role"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                value={formData.role}
+                onChange={handleChange}
+              >
+                <option value="patient">Patient</option>
+                <option value="doctor">Doctor</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? <LoadingSpinner /> : 'Sign in'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Suspension Modal */}
+      {suspensionInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 rounded-full mr-3">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Account Suspended
+                </h3>
+              </div>
+              <button
+                onClick={() => setSuspensionInfo(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Your account has been suspended by an administrator and you cannot log in at this time.
+              </p>
+
+              {/* Suspension Reason */}
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-red-800 dark:text-red-400 mb-1">
+                  Reason for Suspension:
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {suspensionInfo.reason}
+                </p>
+              </div>
+
+              {/* Suspension Date */}
+              {suspensionInfo.suspendedAt && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Suspended on: {new Date(suspensionInfo.suspendedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              )}
+
+              {/* Contact Support */}
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  <span className="font-medium">Need help?</span> Please contact our support team at{' '}
+                  <a href="mailto:support@healthconnect.com" className="underline hover:text-blue-600">
+                    support@healthconnect.com
+                  </a>
+                  {' '}to appeal this suspension or get more information.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setSuspensionInfo(null)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Login;
