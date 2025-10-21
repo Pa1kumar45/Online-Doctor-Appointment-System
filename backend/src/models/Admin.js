@@ -19,6 +19,16 @@ password:{
     minlength: 6,
     select: false
 },
+// Password reset functionality
+passwordResetToken: {
+  type: String // Hashed reset token for password recovery
+},
+passwordResetExpires: {
+  type: Date // Expiration time for reset token (1 hour)
+},
+passwordChangedAt: {
+  type: Date // Timestamp of last password change
+},
 role: {
     type: String,
     default: 'admin',

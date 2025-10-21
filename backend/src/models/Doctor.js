@@ -85,6 +85,27 @@ const doctorSchema = new mongoose.Schema({
       isAvailable: { type: Boolean, default: true } // Slot availability status
     }]
   }],
+  // Email verification for OTP authentication
+  isEmailVerified: {
+    type: Boolean,
+    default: false // Set to true after OTP verification
+  },
+  emailVerifiedAt: {
+    type: Date // Timestamp of email verification
+  },
+  
+  // Password reset functionality
+  passwordResetToken: {
+    type: String // Hashed reset token for password recovery
+  },
+  passwordResetExpires: {
+    type: Date // Expiration time for reset token (1 hour)
+  },
+  passwordChangedAt: {
+    type: Date // Timestamp of last password change
+  },
+  
+  // Admin verification status (separate from email verification)
   verificationStatus:{
     type:String,
     enum:['pending', ' verified', 'rejected','under_review'],
