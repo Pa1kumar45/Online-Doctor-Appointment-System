@@ -78,11 +78,25 @@ const doctorSchema = new mongoose.Schema({
       type: String, 
       enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] 
     },
-    slots: [{ // Available time slots for each day
-      slotNumber: Number, // Sequential slot identifier
-      startTime: String,  // Format: "09:00" (24-hour format)
-      endTime: String,    // Format: "10:00" (24-hour format)
-      isAvailable: { type: Boolean, default: true } // Slot availability status
+    slots: [{ // Available time slots for each day (fixed 1-hour slots from 9 AM to 9 PM)
+      slotNumber: { 
+        type: Number, 
+        required: true,
+        min: 1,
+        max: 12 // 12 slots total (9 AM - 9 PM)
+      },
+      startTime: { 
+        type: String, 
+        required: true 
+      }, // Format: "09:00", "10:00", etc. (24-hour format)
+      endTime: { 
+        type: String, 
+        required: true 
+      },    // Format: "10:00", "11:00", etc. (always 1 hour after start)
+      isAvailable: { 
+        type: Boolean, 
+        default: true 
+      } // Doctor's preference - whether they want to work this slot
     }]
   }],
   // Email verification for OTP authentication

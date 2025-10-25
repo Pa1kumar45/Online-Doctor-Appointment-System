@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Clock, Plus, Trash2, GraduationCap, Briefcase, Phone, Image, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, Mail, Calendar, Clock, GraduationCap, Briefcase, Phone, Image } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import { Doctor, Schedule, Slot } from '../types/index.ts';
@@ -20,6 +19,22 @@ interface DoctorFormData {
   contactNumber: string;
   schedule: Schedule[];
 }
+
+// Fixed 12 time slots from 9 AM to 9 PM (1 hour each)
+const FIXED_TIME_SLOTS = [
+  { slotNumber: 1, startTime: '09:00', endTime: '10:00' },
+  { slotNumber: 2, startTime: '10:00', endTime: '11:00' },
+  { slotNumber: 3, startTime: '11:00', endTime: '12:00' },
+  { slotNumber: 4, startTime: '12:00', endTime: '13:00' },
+  { slotNumber: 5, startTime: '13:00', endTime: '14:00' },
+  { slotNumber: 6, startTime: '14:00', endTime: '15:00' },
+  { slotNumber: 7, startTime: '15:00', endTime: '16:00' },
+  { slotNumber: 8, startTime: '16:00', endTime: '17:00' },
+  { slotNumber: 9, startTime: '17:00', endTime: '18:00' },
+  { slotNumber: 10, startTime: '18:00', endTime: '19:00' },
+  { slotNumber: 11, startTime: '19:00', endTime: '20:00' },
+  { slotNumber: 12, startTime: '20:00', endTime: '21:00' },
+];
 
 const DoctorProfile = () => {
   const { currentUser, setCurrentUser } = useApp();
@@ -42,7 +57,20 @@ const DoctorProfile = () => {
     const days: Schedule['day'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     return days.map(day => {
       const existingDay = existingSchedule.find(s => s.day === day);
-      return existingDay || { day, slots: [] };
+      if (existingDay) {
+        // Keep existing schedule but ensure all slots have proper structure
+        return {
+          day,
+          slots: existingDay.slots.map(slot => ({
+            slotNumber: slot.slotNumber,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isAvailable: slot.isAvailable ?? true
+          }))
+        };
+      }
+      // Initialize empty schedule for this day
+      return { day, slots: [] };
     });
   };
 
@@ -100,15 +128,32 @@ const DoctorProfile = () => {
     }));
   };
 
-  const handleSlotChange = (day: Schedule['day'], slotIndex: number, field: keyof Slot, value: string) => {
+  const toggleSlotAvailability = (day: Schedule['day'], slotNumber: number) => {
     if (!formData) return;
     
     const updatedSchedule = formData.schedule.map(scheduleDay => {
       if (scheduleDay.day === day) {
-        const updatedSlots = scheduleDay.slots.map((slot, idx) => 
-          idx === slotIndex ? { ...slot, [field]: value } : slot
-        );
-        return { ...scheduleDay, slots: updatedSlots };
+        // Check if slot already exists
+        const existingSlotIndex = scheduleDay.slots.findIndex(s => s.slotNumber === slotNumber);
+        
+        if (existingSlotIndex >= 0) {
+          // Toggle existing slot
+          const updatedSlots = [...scheduleDay.slots];
+          updatedSlots[existingSlotIndex] = {
+            ...updatedSlots[existingSlotIndex],
+            isAvailable: !updatedSlots[existingSlotIndex].isAvailable
+          };
+          return { ...scheduleDay, slots: updatedSlots };
+        } else {
+          // Add new slot from fixed slots
+          const fixedSlot = FIXED_TIME_SLOTS.find(s => s.slotNumber === slotNumber);
+          if (fixedSlot) {
+            return {
+              ...scheduleDay,
+              slots: [...scheduleDay.slots, { ...fixedSlot, isAvailable: true }].sort((a, b) => a.slotNumber - b.slotNumber)
+            };
+          }
+        }
       }
       return scheduleDay;
     });
@@ -116,30 +161,12 @@ const DoctorProfile = () => {
     setFormData({ ...formData, schedule: updatedSchedule });
   };
 
-  const handleAddSlot = (day: Schedule['day']) => {
-    if (!formData) return;
-    
-    const updatedSchedule = formData.schedule.map(scheduleDay => {
-      if (scheduleDay.day === day) {
-        return { ...scheduleDay, slots: [...scheduleDay.slots, { start: '', end: '', slotNumber: scheduleDay.slots.length + 1, startTime: '', endTime: '', isAvailable: true }] };
-      }
-      return scheduleDay;
-    });
-
-    setFormData({ ...formData, schedule: updatedSchedule });
-  };
-
-  const handleRemoveSlot = (day: Schedule['day'], slotIndex: number) => {
-    if (!formData) return;
-    
-    const updatedSchedule = formData.schedule.map(scheduleDay => {
-      if (scheduleDay.day === day) {
-        return { ...scheduleDay, slots: scheduleDay.slots.filter((_, idx) => idx !== slotIndex) };
-      }
-      return scheduleDay;
-    });
-
-    setFormData({ ...formData, schedule: updatedSchedule });
+  const isSlotSelected = (day: Schedule['day'], slotNumber: number): boolean => {
+    if (!formData) return false;
+    const scheduleDay = formData.schedule.find(s => s.day === day);
+    if (!scheduleDay) return false;
+    const slot = scheduleDay.slots.find(s => s.slotNumber === slotNumber);
+    return slot ? slot.isAvailable : false;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,20 +184,31 @@ const DoctorProfile = () => {
       setError(null);
       setSuccess(null);
 
+      // Filter out slots that are not available (unchecked)
+      const cleanedSchedule = formData.schedule.map(day => ({
+        ...day,
+        slots: day.slots.filter(slot => slot.isAvailable)
+      })).filter(day => day.slots.length > 0); // Remove days with no available slots
+
       // Create a new object with all the form data
       const submitData = {
-        ...currentUser,
-        ...formData,
-        schedule: formData.schedule
+        name: formData.name,
+        specialization: formData.specialization,
+        experience: formData.experience,
+        qualification: formData.qualification,
+        about: formData.about,
+        contactNumber: formData.contactNumber,
+        avatar: formData.avatar,
+        schedule: cleanedSchedule
       };
 
-      const response = await doctorService.updateDoctorProfile(submitData as Doctor);
+      const response = await doctorService.updateDoctorProfile(submitData);
       
       // Update both currentUser and formData with the complete data
       setCurrentUser({...currentUser,...response});
-      console.log("response",response)
+      console.log("Profile update response:", response);
       
-      // Create a new form data object with all required fields
+      // Update form data with response
       const newFormData: DoctorFormData = {
         name: response.name || '',
         email: response.email || '',
@@ -180,11 +218,11 @@ const DoctorProfile = () => {
         qualification: response.qualification || '',
         about: response.about || '',
         contactNumber: response.contactNumber || '',
-        schedule: formData.schedule // Preserve the current schedule
+        schedule: initializeSchedule(response.schedule || [])
       };
       
       setFormData(newFormData);
-      setSuccess('Profile updated successfully!');
+      setSuccess('Profile and schedule updated successfully!');
     } catch (err) {
       console.error('Failed to update profile:', err);
       setError('Failed to update profile. Please try again.');
@@ -193,7 +231,7 @@ const DoctorProfile = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !formData) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <LoadingSpinner />
@@ -212,7 +250,7 @@ const DoctorProfile = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6">
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-400 text-red-700 shadow-sm" role="alert">
           <span className="block sm:inline">{error}</span>
@@ -249,15 +287,6 @@ const DoctorProfile = () => {
                 </p>
               </div>
             </div>
-            
-            {/* Session Management Link */}
-            <Link
-              to="/sessions"
-              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Shield className="mr-2 h-4 w-4" />
-              Manage Sessions
-            </Link>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -373,43 +402,45 @@ const DoctorProfile = () => {
               />
             </div>
 
+            {/* NEW FIXED SLOT SCHEDULE UI */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Clock size={20} className="text-blue-500" /> Weekly Schedule
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Clock size={20} className="text-blue-500" /> Weekly Schedule (9 AM - 9 PM)
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Select your available time slots for each day
+                </p>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  ℹ️ Each slot is 1 hour. Click to toggle availability. Only selected slots will be visible to patients for booking.
+                </p>
+              </div>
+
               {formData.schedule.map((scheduleDay) => (
                 <div key={scheduleDay.day} className="p-6 border rounded-xl dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                  <h3 className="font-medium text-gray-900 dark:text-white mb-4">{scheduleDay.day}</h3>
-                  {scheduleDay.slots.map((slot, slotIndex) => (
-                    <div key={slotIndex} className="flex gap-3 mb-3">
-                      <input
-                        type="time"
-                        value={slot.startTime}
-                        onChange={(e) => handleSlotChange(scheduleDay.day, slotIndex, 'startTime', e.target.value)}
-                        className="flex-1 px-4 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
-                      />
-                      <input
-                        type="time"
-                        value={slot.endTime}
-                        onChange={(e) => handleSlotChange(scheduleDay.day, slotIndex, 'endTime', e.target.value)}
-                        className="flex-1 px-4 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSlot(scheduleDay.day, slotIndex)}
-                        className="px-3 py-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => handleAddSlot(scheduleDay.day)}
-                    className="mt-3 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-2 transition-colors"
-                  >
-                    <Plus size={16} /> Add Time Slot
-                  </button>
+                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-4">{scheduleDay.day}</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {FIXED_TIME_SLOTS.map((slot) => {
+                      const isSelected = isSlotSelected(scheduleDay.day, slot.slotNumber);
+                      return (
+                        <button
+                          key={slot.slotNumber}
+                          type="button"
+                          onClick={() => toggleSlotAvailability(scheduleDay.day, slot.slotNumber)}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                            isSelected
+                              ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                              : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-500 hover:border-blue-400 dark:hover:border-blue-500'
+                          }`}
+                        >
+                          {slot.startTime} - {slot.endTime}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>

@@ -93,17 +93,17 @@ router.put('/:id', protect, doctorOnly, updateDoctor);
 router.delete('/:id', protect, doctorOnly, deleteDoctor);
 
 /**
- * PUT /api/doctors/profile
+ * PUT /api/doctors/profile/update
  * Update doctor's own profile information
  * 
- * @route PUT /api/doctors/profile
+ * @route PUT /api/doctors/profile/update
  * @access Private (Doctor only)
  * @middleware protect - JWT authentication required
  * @middleware doctorOnly - Restricts access to doctors
  * @body {Object} Profile update data (whitelisted fields only)
  * @returns {Object} Updated doctor profile
  */
-router.put('/profile', protect, doctorOnly, updateDoctorProfile);
+router.put('/profile/update', protect, doctorOnly, updateDoctorProfile);
 
 /**
  * Protected Patient Routes - Require patient authentication

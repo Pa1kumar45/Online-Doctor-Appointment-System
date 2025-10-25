@@ -9,13 +9,13 @@ import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import ForgotPassword from './pages/ForgotPassword';
-import SessionManagement from './pages/SessionManagement';
-import PatientAppointments from './pages/PatientAppointments';
 import DoctorDashboard from './pages/DoctorDashboard';
 import DoctorProfile from './pages/DoctorProfile';
 import PatientProfile from './pages/PatientProfile';
 import DoctorPage from './pages/DoctorPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminLogs from './pages/AdminLogs';
+import Appointments from './pages/Appointments';
 import { isAdmin } from './utils/auth';
 
 interface GetCurrentUserResponse {
@@ -71,6 +71,7 @@ const App: React.FC = () => {
           {/* Public routes */}
           <Route path="/" element={
             currentUser ? (
+              (currentUser.role === 'admin' || currentUser.role === 'super_admin') ? <Navigate to="/admin" /> :
               currentUser.role === 'doctor' ? <DoctorDashboard /> : <DoctorList />
             ) : (
               <Homepage />
@@ -87,18 +88,17 @@ const App: React.FC = () => {
           {currentUser ? (
             <>
               <Route
-                path="/appointments"
-                element={
-                  currentUser?.role === 'patient' ? <PatientAppointments /> : <DoctorDashboard />
-                }
-              />
-              <Route
                 path="/profile"
                 element={
                   currentUser?.role === 'doctor' ? <DoctorProfile /> : <PatientProfile />
                 }
               />
-              <Route path="/sessions" element={<SessionManagement />} />
+              {currentUser.role === 'patient' && (
+                <Route
+                  path="/appointments"
+                  element={<Appointments />}
+                />
+              )}
             </>
           ) : (
             <Route path="*" element={<Navigate to="/" />} />
@@ -110,6 +110,14 @@ const App: React.FC = () => {
             element={
               <AdminRoute>
                 <AdminDashboard />
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/logs" 
+            element={
+              <AdminRoute>
+                <AdminLogs />
               </AdminRoute>
             } 
           />

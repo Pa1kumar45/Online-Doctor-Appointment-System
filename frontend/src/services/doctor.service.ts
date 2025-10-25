@@ -150,7 +150,7 @@ export const doctorService = {
    * ```
    */
   async updateDoctorProfile(userData: Partial<Doctor>): Promise<Doctor> {
-    const response = await fetch(`${API_URL}/api/doctors/profile`, {
+    const response = await fetch(`${API_URL}/api/doctors/profile/update`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -165,7 +165,8 @@ export const doctorService = {
       throw new Error(error.message || 'Failed to update profile');
     }
 
-    return response.json();
+    const result = await response.json();
+    return result.success ? result.data : result;
   },
 
   // Note: Service can be extended with additional doctor-related operations:

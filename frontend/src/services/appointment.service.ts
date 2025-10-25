@@ -37,6 +37,33 @@ import { API_URL } from './api.service';        // Base API URL from core servic
  */
 export const appointmentService = {
   /**
+   * getAvailableSlots - Get available time slots for a doctor on a specific date
+   * 
+   * Fetches available 1-hour slots (9 AM - 9 PM) for a doctor.
+   * Filters based on doctor's schedule and existing bookings.
+   * 
+   * @param {string} doctorId - Doctor's unique identifier
+   * @param {string} date - Date in YYYY-MM-DD format
+   * @returns {Promise<{date: string, dayOfWeek: string, availableSlots: Slot[]}>}
+   */
+  async getAvailableSlots(doctorId: string, date: string): Promise<{
+    date: string;
+    dayOfWeek: string;
+    availableSlots: Array<{slotNumber: number, startTime: string, endTime: string}>;
+  }> {
+    const response = await fetch(`${API_URL}/appointments/available-slots/${doctorId}?date=${date}`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch available slots');
+    }
+
+    return response.json();
+  },
+
+  /**
    * addAppointment - Creates a new appointment in the system
    * 
    * Submits appointment data to create a new appointment booking.
