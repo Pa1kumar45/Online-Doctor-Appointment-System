@@ -79,6 +79,16 @@ const PatientProfile = () => {
     if (!formData) return;
     
     const { name, value } = e.target;
+    
+    // For contact number, only allow digits and limit to 10 characters
+    if (name === 'contactNumber') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 10) {
+        setFormData(prev => ({ ...prev!, [name]: digits }));
+      }
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev!,
       [name]: value
@@ -89,10 +99,18 @@ const PatientProfile = () => {
     if (!formData) return;
 
     const updatedContacts = [...formData.emergencyContact];
-    updatedContacts[index] = {
-      ...updatedContacts[index],
-      [field]: value
-    };
+    
+    // For emergency contact phone, only allow digits and limit to 10 characters
+    if (field === 'phone') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 10) {
+        updatedContacts[index] = { ...updatedContacts[index], [field]: digits };
+      } else {
+        return; // Don't update if more than 10 digits
+      }
+    } else {
+      updatedContacts[index] = { ...updatedContacts[index], [field]: value };
+    }
 
     setFormData(prev => ({
       ...prev!,
@@ -124,6 +142,21 @@ const PatientProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData) return;
+    
+    // Validate contact number is exactly 10 digits
+    if (formData.contactNumber && formData.contactNumber.length !== 10) {
+      setError('Contact number must be exactly 10 digits');
+      return;
+    }
+    
+    // Validate emergency contact phone numbers are exactly 10 digits
+    for (let i = 0; i < formData.emergencyContact.length; i++) {
+      const phone = formData.emergencyContact[i].phone;
+      if (phone && phone.length !== 10) {
+        setError(`Emergency contact ${i + 1} phone number must be exactly 10 digits`);
+        return;
+      }
+    }
     
     try {
       setIsLoading(true);

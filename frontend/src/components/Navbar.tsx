@@ -38,12 +38,15 @@ const Navbar = () => {
           </div>
 
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
-            <Link
-              to="/"
-              className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Home
-            </Link>
+            {/* Show Home only for patients/guests, not for doctors */}
+            {(!currentUser || currentUser.role !== 'doctor') && (
+              <Link
+                to="/"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Home
+              </Link>
+            )}
             {currentUser ? (
               <>
                 <Link
@@ -57,7 +60,7 @@ const Navbar = () => {
                   className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium"
                   onClick={toggleMenu}
                 >
-                  Appointments
+                  {currentUser.role === 'doctor' ? 'Dashboard' : 'Appointments'}
                 </Link> 
                 {/* <Link
                   to="/prescriptions"
