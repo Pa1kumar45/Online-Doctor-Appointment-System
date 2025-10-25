@@ -84,6 +84,16 @@ const DoctorProfile = () => {
     if (!formData) return;
     
     const { name, value } = e.target;
+    
+    // For contact number, only allow digits and limit to 10 characters
+    if (name === 'contactNumber') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 10) {
+        setFormData(prev => ({ ...prev!, [name]: digits }));
+      }
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev!,
       [name]: name === 'experience' ? Number(value) : value
@@ -135,6 +145,12 @@ const DoctorProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData) return;
+    
+    // Validate contact number is exactly 10 digits
+    if (formData.contactNumber && formData.contactNumber.length !== 10) {
+      setError('Contact number must be exactly 10 digits');
+      return;
+    }
     
     try {
       setIsLoading(true);

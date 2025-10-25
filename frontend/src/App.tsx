@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import LoginInfoBanner from './components/LoginInfoBanner';
+import Homepage from './pages/Homepage';
 import DoctorList from './pages/DoctorList';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
@@ -68,12 +69,19 @@ const App: React.FC = () => {
         
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<DoctorList />} />
+          <Route path="/" element={
+            currentUser ? (
+              currentUser.role === 'doctor' ? <DoctorDashboard /> : <DoctorList />
+            ) : (
+              <Homepage />
+            )
+          } />
           <Route path="/signup" element={!currentUser ? <SignUp /> : <Navigate to="/" />} />
           <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/" />} />
           <Route path="/admin/login" element={!currentUser ? <AdminLogin /> : <Navigate to="/admin" />} />
           <Route path="/forgot-password" element={!currentUser ? <ForgotPassword /> : <Navigate to="/" />} />
           <Route path="/doctor/:id" element={<DoctorPage />} />
+          <Route path="/doctors" element={<DoctorList />} />
 
           {/* Protected user routes */}
           {currentUser ? (

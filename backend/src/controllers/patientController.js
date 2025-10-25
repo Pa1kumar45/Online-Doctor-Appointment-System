@@ -42,6 +42,12 @@ export const updatePatient = async (req, res) => {
     await patient.save();
     res.status(200).json({success:true,data:{...patient.toObject(),role:req.userRole}});
   } catch (error) {
+    console.error('Error updating patient profile:', error);
+    // If Mongoose validation failed, return 400 with the validation messages
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: 'Validation failed', errors });
+    }
     res.status(500).json({success:false, message: error.message });
   }
 };

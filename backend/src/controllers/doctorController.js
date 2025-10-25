@@ -186,9 +186,11 @@ export const updateDoctorProfile = async (req, res) => {
       'name',
       'specialization',
       'experience',
-      'availability',
+      'qualification',
+      'about',
       'contactNumber',
-      'profileImage'
+      'avatar',
+      'schedule'
     ];
 
     const updates = req.body;
@@ -208,7 +210,12 @@ export const updateDoctorProfile = async (req, res) => {
     // Return updated profile with role information
     res.status(200).json({success: true, data: {...doctor.toObject(), role: "doctor"}});
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error updating profile' });
+    console.error('Error updating doctor profile:', error);
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: 'Validation failed', errors });
+    }
+    res.status(500).json({ success: false, message: 'Error updating profile', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
   }
 };
 
