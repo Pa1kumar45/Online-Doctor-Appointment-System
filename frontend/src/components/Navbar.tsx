@@ -1,5 +1,5 @@
 import  { useEffect, useState } from 'react';
-import { Link} from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useApp} from '../context/AppContext';
 
@@ -7,6 +7,7 @@ import { useApp} from '../context/AppContext';
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { currentUser,logout } = useApp();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -18,10 +19,29 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    
-  console.log("navbar effect",currentUser)
-    
+    console.log("navbar effect - currentUser:", currentUser);
+    console.log("navbar effect - currentUser.role:", currentUser?.role);
   }, [currentUser])
+  
+  // Helper function to determine if a link is active
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    if (path === '/admin') {
+      return location.pathname === '/admin' || location.pathname.startsWith('/admin');
+    }
+    return location.pathname === path;
+  };
+
+  // Get active and inactive styles
+  const getLinkClasses = (path: string) => {
+    const baseClasses = "px-3 py-2 rounded-md text-sm font-medium transition-colors";
+    const activeClasses = "bg-blue-600 text-white dark:bg-blue-500";
+    const inactiveClasses = "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700";
+    
+    return `${baseClasses} ${isActive(path) ? activeClasses : inactiveClasses}`;
+  };
   
 
   return (
@@ -38,40 +58,50 @@ const Navbar = () => {
           </div>
 
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
-            {/* Show Home only for patients/guests, not for doctors */}
-            {(!currentUser || currentUser.role !== 'doctor') && (
+            {/* Home/Dashboard link - different destinations based on role */}
+            {(!currentUser || currentUser.role === 'patient') && (
               <Link
                 to="/"
-                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                className={getLinkClasses('/')}
               >
                 Home
               </Link>
             )}
+            {(currentUser?.role === 'admin' || currentUser?.role === 'super_admin') && (
+              <Link
+                to="/admin"
+                className={getLinkClasses('/admin')}
+              >
+                Dashboard
+              </Link>
+            )}
+            {currentUser?.role === 'doctor' && (
+              <Link
+                to="/"
+                className={getLinkClasses('/')}
+              >
+                Dashboard
+              </Link>
+            )}
             {currentUser ? (
               <>
+                {currentUser.role === 'patient' && (
+                  <Link
+                    to="/appointments"
+                    className={getLinkClasses('/appointments')}
+                  >
+                    Appointments
+                  </Link>
+                )}
                 <Link
                   to={'/profile'}
-                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  className={getLinkClasses('/profile')}
                 >
                   Profile
                 </Link>
-                <Link
-                  to={'appointments'}
-                  className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium"
-                  onClick={toggleMenu}
-                >
-                  {currentUser.role === 'doctor' ? 'Dashboard' : 'Appointments'}
-                </Link> 
-                {/* <Link
-                  to="/prescriptions"
-                  className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium"
-                  onClick={toggleMenu}
-                >
-                  Prescriptions
-                </Link> */}
                 <button
                   onClick={handleLogout}
-                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Logout
                 </button>
@@ -80,19 +110,19 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  className={getLinkClasses('/login')}
                 >
                   Login
                 </Link>
                 <Link
                   to="/signup"
-                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  className={getLinkClasses('/signup')}
                 >
                   Sign Up
                 </Link>
                 <Link
                   to="/admin/login"
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors"
                 >
                   <span className="mr-1">🛡️</span>
                   Admin

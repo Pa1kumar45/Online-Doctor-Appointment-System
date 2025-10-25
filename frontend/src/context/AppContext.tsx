@@ -9,6 +9,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import axios from '../utils/axios';
 import { Doctor, Patient, SignUpFormData, LoginCredentials } from '../types/index';
+import { Admin } from '../types/admin';
 
 /**
  * Login information interface - timestamp data for login banner
@@ -30,8 +31,8 @@ interface ThemeContextType {
  * Main app context interface - extends theme context with auth functionality
  */
 interface AppContextType extends ThemeContextType {
-  currentUser: Doctor | Patient | null;                    // Currently authenticated user
-  setCurrentUser: (user: Doctor | Patient | null) => void; // Function to set current user
+  currentUser: Doctor | Patient | Admin | null;                    // Currently authenticated user
+  setCurrentUser: (user: Doctor | Patient | Admin | null) => void; // Function to set current user
   isLoading: boolean;                                       // Global loading state
   error: string | null;                                     // Global error state
   logout: () => void;                                       // Logout function
@@ -60,7 +61,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     // Current authenticated user state (doctor or patient)
-    const [currentUser, setCurrentUser] = useState<Doctor | Patient | null>(null);
+    const [currentUser, setCurrentUser] = useState<Doctor | Patient | Admin | null>(null);
     
     // Global loading and error states (currently unused but available for future use)
     const [isLoading] = useState(false);

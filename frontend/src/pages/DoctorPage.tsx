@@ -1,98 +1,125 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import {  Clock, Briefcase, GraduationCap, User, Phone } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {  Clock, Briefcase, GraduationCap, User, Phone, Calendar, CheckCircle } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { doctorService } from '../services/doctor.service';
 import { appointmentService } from '../services/appointment.service';
-import { Doctor, Appointment, Slot } from '../types/index.ts';
+import { Doctor } from '../types/index.ts';
 
 import { useApp } from '../context/AppContext';
 
 const DoctorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const {currentUser} = useApp();
-  const [appointment, setAppointment] = useState<Appointment>(
-    {
-      date:` ${new Date()}`,
-      startTime: '',
-      endTime: '',
-      status: 'pending',
-      reason: 'Checkup',
-    },
-  );
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedSlot, setSelectedSlot] = useState<{slotNumber: number, startTime: string, endTime: string} | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<Array<{slotNumber: number, startTime: string, endTime: string}>>([]);
+  const [reason, setReason] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFetchingSlots, setIsFetchingSlots] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
+  // Calculate min and max dates (today and 7 days from today)
+  const today = new Date();
+  const minDate = today.toISOString().split('T')[0];
+  const maxDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   useEffect(() => {
-    loadDoctorAndAppointments();
+    loadDoctor();
   }, [id]);
 
-  const daysofweek = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  useEffect(() => {
+    if (selectedDate && doctor) {
+      fetchAvailableSlots();
+    }
+  }, [selectedDate, doctor]);
 
-
-
-  const loadDoctorAndAppointments = async () => {
+  const loadDoctor = async () => {
     try {
       setIsLoading(true);
       const doctorData = await doctorService.getDoctorById(id!);
-      console.log("getDoctorbyid",doctorData);
+      console.log("Doctor data:", doctorData);
       setDoctor(doctorData);
-      // const appointmentsData = await appointmentService.getDoctorAppointments(id!);
-      // setAppointments(appointmentsData);
     } catch (err) {
-      setError('Failed to load doctor details and appointments');
+      setError('Failed to load doctor details');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const fetchAvailableSlots = async () => {
+    if (!doctor || !selectedDate) return;
+    
+    try {
+      setIsFetchingSlots(true);
+      setError(null);
+      const slotsData = await appointmentService.getAvailableSlots(doctor._id, selectedDate);
+      console.log("Available slots:", slotsData);
+      setAvailableSlots(slotsData.availableSlots || []);
+      setSelectedSlot(null); // Reset selected slot when date changes
+    } catch (err) {
+      console.error('Failed to fetch available slots:', err);
+      setAvailableSlots([]);
+      setError('No available slots for this date');
+    } finally {
+      setIsFetchingSlots(false);
+    }
+  };
 
-  const handleBookAppointment = async () => {
-    //using this prevents refreshing the page after submit as this is part of the form compoent
-    //so we can check what is happenning as the code runs
-    // e.preventDefault();
+  const handleBookAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    if (!doctor || !appointment) return;
+    if (!doctor || !selectedDate || !selectedSlot || !reason.trim()) {
+      setError('Please fill all required fields');
+      return;
+    }
 
     try {
-      const appointmentData: Partial<Appointment> = {
+      setIsLoading(true);
+      setError(null);
+      
+      const appointmentData = {
         doctorId: doctor._id,
-        date: appointment.date,
-        startTime: appointment.startTime,
-        endTime: appointment.endTime,
-        status: appointment.status,
-        reason: appointment.reason,
+        date: selectedDate,
+        slotNumber: selectedSlot.slotNumber,
+        startTime: selectedSlot.startTime,
+        endTime: selectedSlot.endTime,
+        reason: reason.trim(),
+        status: 'pending' as const,
+        mode: 'video' as const
       };
+
+      console.log("Booking appointment:", appointmentData);
       const response = await appointmentService.addAppointment(appointmentData);
-      console.log("handle submit response",response);
-     
-    } catch (err) {
-      setError('Failed to book appointment');
+      console.log("Appointment booked:", response);
+      
+      setSuccess('Appointment booked successfully! Waiting for doctor confirmation.');
+      setSelectedDate('');
+      setSelectedSlot(null);
+      setAvailableSlots([]);
+      setReason('');
+      
+      // Redirect to appointments page after 2 seconds
+      setTimeout(() => {
+        navigate('/appointments');
+      }, 2000);
+    } catch (err: any) {
+      console.error('Failed to book appointment:', err);
+      setError(err.message || 'Failed to book appointment. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-
-  const getSlotColor= (slot:Slot,day:string): string => {
-    const dayIndex = daysofweek.indexOf(day);
-    const today = new Date().getDay();
-    if(dayIndex<today){
-     return 'bg-gray-500';
-    }
-    else if (slot.isAvailable) {
-      return 'bg-green-500';
-    }
-    return 'bg-yellow-500';
-  };
-
-  if (isLoading) {
+  if (isLoading && !doctor) {
     return <div className="flex justify-center items-center h-screen"><LoadingSpinner /></div>;
   }
 
   if (!doctor) {
-    return <div>Doctor not found</div>;
+    return <div className="flex justify-center items-center h-screen text-gray-600 dark:text-gray-400">Doctor not found</div>;
   }
 
   return (
@@ -100,6 +127,13 @@ const DoctorPage: React.FC = () => {
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-400 text-red-700 shadow-sm" role="alert">
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-400 text-green-700 shadow-sm flex items-center gap-2" role="alert">
+          <CheckCircle size={20} />
+          {success}
         </div>
       )}
       
@@ -179,43 +213,24 @@ const DoctorPage: React.FC = () => {
               {doctor.schedule && doctor.schedule.length > 0 && (
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl">
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Clock size={20} className="text-blue-500" /> Schedule
+                    <Clock size={20} className="text-blue-500" /> Weekly Schedule
                   </h2>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {doctor.schedule.map((schedule, index) => (
                       schedule.slots && schedule.slots.length > 0 && (
-                        <div key={index} className="border-b dark:border-gray-600 pb-4 last:border-b-0">
-                          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+                        <div key={index} className="border-b dark:border-gray-600 pb-3 last:border-b-0">
+                          <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
                             {schedule.day}
                           </h3>
-                          <div className="grid grid-cols-2 gap-2">
-                            {schedule.slots.map((slot, slotIndex) => {
-                              const dayIndex = daysofweek.indexOf(schedule.day);
-                              const today = new Date().getDay();
-                              return (
-                                <button
-                                  key={slotIndex}
-                                  className={`p-3 rounded-lg text-white text-sm font-medium transition-colors ${
-                                    getSlotColor(slot, schedule.day)
-                                  } ${
-                                    slot.isAvailable && dayIndex >= today
-                                      ? 'hover:opacity-90'
-                                      : 'opacity-50 cursor-not-allowed'
-                                  }`}
-                                  onClick={() => {
-                                    setAppointment({
-                                      ...appointment,
-                                      date: schedule.day,
-                                      startTime: slot.startTime,
-                                      endTime: slot.endTime
-                                    });
-                                  }}
-                                  disabled={!slot.isAvailable || dayIndex < today}
-                                >
-                                  {`${slot.startTime} - ${slot.endTime}`}
-                                </button>
-                              );
-                            })}
+                          <div className="flex flex-wrap gap-2">
+                            {schedule.slots.map((slot, slotIndex) => (
+                              <span
+                                key={slotIndex}
+                                className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs"
+                              >
+                                {`${slot.startTime} - ${slot.endTime}`}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       )
@@ -226,73 +241,100 @@ const DoctorPage: React.FC = () => {
             </div>
           </div>
 
+          {/* BOOKING FORM - SLOT BASED */}
           <div className="mt-8 bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <Calendar size={20} className="text-blue-500" />
               Book Appointment
             </h2>
             
             {currentUser?.role === 'patient' ? (
               <form onSubmit={handleBookAppointment} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      value={appointment.date}
-                      onChange={(e) => setAppointment({...appointment, date: e.target.value})}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Start Time
-                    </label>
-                    <input
-                      type="time"
-                      value={appointment.startTime}
-                      onChange={(e) => setAppointment({...appointment, startTime: e.target.value})}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      End Time
-                    </label>
-                    <input
-                      type="time"
-                      
-                      value={appointment.endTime}
-                      onChange={(e) => setAppointment({...appointment, endTime: e.target.value})}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
-                      required
-                    />
-                  </div>
-                </div>
-
+                {/* Date Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Reason for Appointment
+                    Select Date (Next 7 Days)
                   </label>
-                  <textarea
-                    value={appointment.reason}
-                    onChange={(e) => setAppointment({...appointment, reason: e.target.value})}
-                    rows={3}
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    min={minDate}
+                    max={maxDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
                     required
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    You can only book appointments within the next 7 days
+                  </p>
                 </div>
 
+                {/* Available Slots */}
+                {selectedDate && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Available Time Slots
+                    </label>
+                    
+                    {isFetchingSlots ? (
+                      <div className="flex justify-center py-8">
+                        <LoadingSpinner />
+                      </div>
+                    ) : availableSlots.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {availableSlots.map((slot) => (
+                          <button
+                            key={slot.slotNumber}
+                            type="button"
+                            onClick={() => setSelectedSlot(slot)}
+                            className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                              selectedSlot?.slotNumber === slot.slotNumber
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-500 hover:border-blue-400 dark:hover:border-blue-500'
+                            }`}
+                          >
+                            {slot.startTime} - {slot.endTime}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <Clock size={32} className="mx-auto mb-2" />
+                        <p>No available slots for this date</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Reason */}
+                {selectedSlot && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Reason for Appointment
+                    </label>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      rows={3}
+                      placeholder="Please describe your symptoms or reason for visit..."
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
+                      required
+                    />
+                  </div>
+                )}
+
+                {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  disabled={!selectedDate || !selectedSlot || !reason.trim() || isLoading}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Book Appointment
+                  {isLoading ? <LoadingSpinner /> : (
+                    <>
+                      <Calendar size={18} />
+                      Book Appointment
+                    </>
+                  )}
                 </button>
               </form>
             ) : (

@@ -62,10 +62,40 @@ export interface AdminActionLog {
 }
 
 export interface UserFilters {
-  role?: 'doctor' | 'patient';
+  role?: 'doctor' | 'patient' | 'admin' | 'super_admin';
   status?: 'active' | 'inactive';
   verificationStatus?: 'pending' | 'verified' | 'rejected';
   search?: string;
   page?: number;
   limit?: number;
+}
+
+// Auth-related types for Admin Logs page (SRS requirements)
+export interface AuthLog {
+  _id: string;
+  userId?: string;
+  email?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  success: boolean;
+  message?: string;
+  createdAt: Date;
+}
+
+export interface FailedLoginAttempt {
+  _id: string;
+  email?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  reason?: string;
+  createdAt: Date;
+}
+
+export interface AuthStats {
+  totalLogins: number;
+  successfulLogins: number;
+  failedLogins: number;
+  successRate?: number;
+  topIPs?: { ip: string; count: number }[];
+  recentFailedAttempts?: FailedLoginAttempt[];
 }

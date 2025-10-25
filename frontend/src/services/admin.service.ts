@@ -143,6 +143,69 @@ class AdminService {
       throw new Error('Failed to fetch admin logs');
     }
   }
+
+  /**
+   * Get authentication logs (login activities)
+   * @param filters Optional filters for auth logs
+   */
+  async getAuthLogs(filters: any = {}) {
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+
+      const response = await axios.get(`${this.baseURL}/auth-logs?${params}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching auth logs:', error);
+      throw new Error('Failed to fetch auth logs');
+    }
+  }
+
+  /**
+   * Get failed login attempts
+   * @param filters Optional filters for failed attempts
+   */
+  async getFailedLoginAttempts(filters: any = {}) {
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+
+      const response = await axios.get(`${this.baseURL}/auth-logs/failed-attempts?${params}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching failed login attempts:', error);
+      throw new Error('Failed to fetch failed login attempts');
+    }
+  }
+
+  /**
+   * Get authentication statistics (system performance metrics)
+   * @param filters Optional filters for stats
+   */
+  async getAuthStats(filters: any = {}) {
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+
+      const response = await axios.get(`${this.baseURL}/auth-logs/stats?${params}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching auth stats:', error);
+      throw new Error('Failed to fetch auth stats');
+    }
+  }
 }
 
 export default new AdminService();

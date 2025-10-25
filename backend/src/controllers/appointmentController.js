@@ -16,6 +16,110 @@ import { Appointment } from '../models/Appointment.js';
 import { Doctor } from '../models/Doctor.js';
 
 /**
+ * Fixed time slots configuration (9 AM - 9 PM, 1 hour each)
+ * Slot 1: 09:00-10:00, Slot 2: 10:00-11:00, ..., Slot 12: 20:00-21:00
+ */
+const FIXED_TIME_SLOTS = [
+  { slotNumber: 1, startTime: '09:00', endTime: '10:00' },
+  { slotNumber: 2, startTime: '10:00', endTime: '11:00' },
+  { slotNumber: 3, startTime: '11:00', endTime: '12:00' },
+  { slotNumber: 4, startTime: '12:00', endTime: '13:00' },
+  { slotNumber: 5, startTime: '13:00', endTime: '14:00' },
+  { slotNumber: 6, startTime: '14:00', endTime: '15:00' },
+  { slotNumber: 7, startTime: '15:00', endTime: '16:00' },
+  { slotNumber: 8, startTime: '16:00', endTime: '17:00' },
+  { slotNumber: 9, startTime: '17:00', endTime: '18:00' },
+  { slotNumber: 10, startTime: '18:00', endTime: '19:00' },
+  { slotNumber: 11, startTime: '19:00', endTime: '20:00' },
+  { slotNumber: 12, startTime: '20:00', endTime: '21:00' }
+];
+
+/**
+ * Get available slots for a doctor on a specific date
+ * 
+ * Returns only the slots that:
+ * 1. The doctor has marked as available in their schedule
+ * 2. Are not already booked for that date (no accepted/scheduled appointment)
+ * 
+ * @async
+ * @function getAvailableSlots
+ * @param {Object} req - Express request object
+ * @param {string} req.params.doctorId - Doctor's ObjectId
+ * @param {string} req.query.date - Date in YYYY-MM-DD format
+ * @param {Object} res - Express response object
+ * 
+ * @returns {Array} Array of available slot objects with slotNumber, startTime, endTime
+ * @throws {400} If date parameter is missing
+ * @throws {404} If doctor not found
+ * @throws {500} If database query fails
+ */
+export const getAvailableSlots = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ message: 'Date parameter is required' });
+    }
+
+    // Find the doctor
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    // Get the day of week for the requested date
+    const dateObj = new Date(date + 'T00:00:00');
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayOfWeek = dayNames[dateObj.getDay()];
+
+    // Find doctor's schedule for that day
+    const daySchedule = doctor.schedule?.find(s => s.day === dayOfWeek);
+    
+    if (!daySchedule || daySchedule.slots.length === 0) {
+      return res.json({ 
+        message: 'Doctor does not work on this day',
+        availableSlots: [] 
+      });
+    }
+
+    // Get doctor's preferred slots (those marked as available)
+    const doctorAvailableSlots = daySchedule.slots
+      .filter(slot => slot.isAvailable)
+      .map(slot => slot.slotNumber);
+
+    // Get already booked/accepted slots for this date
+    const bookedAppointments = await Appointment.find({
+      doctorId,
+      date,
+      status: { $in: ['scheduled', 'pending'] } // Both pending and accepted appointments block the slot
+    });
+
+    const bookedSlotNumbers = bookedAppointments.map(apt => apt.slotNumber);
+
+    // Filter out booked slots from doctor's available slots
+    const availableSlotNumbers = doctorAvailableSlots.filter(
+      slotNum => !bookedSlotNumbers.includes(slotNum)
+    );
+
+    // Map to full slot information
+    const availableSlots = availableSlotNumbers.map(slotNum => {
+      const slotInfo = FIXED_TIME_SLOTS.find(s => s.slotNumber === slotNum);
+      return slotInfo;
+    }).filter(Boolean); // Remove any undefined entries
+
+    res.json({
+      date,
+      dayOfWeek,
+      availableSlots
+    });
+  } catch (error) {
+    console.error('Error getting available slots:', error);
+    res.status(500).json({ message: 'Error fetching available slots' });
+  }
+};
+
+/**
  * Get all appointments for the authenticated user
  * 
  * This function retrieves all appointments where the authenticated user
@@ -122,7 +226,12 @@ export const createAppointment = async (req, res) => {
   try {
     console.log('createAppointment:', req.body);
     
-    const { doctorId, date, startTime, endTime, status, reason } = req.body;
+    const { doctorId, date, slotNumber, reason } = req.body;
+
+    // Validate required fields
+    if (!slotNumber || slotNumber < 1 || slotNumber > 12) {
+      return res.status(400).json({ message: 'Valid slot number (1-12) is required' });
+    }
 
     // Validate that the target doctor exists
     const doctor = await Doctor.findById(doctorId);
@@ -139,15 +248,47 @@ export const createAppointment = async (req, res) => {
       return res.status(403).json({ message: 'Only patients can create appointments' });
     }
 
+    // Get the day of week for the requested date
+    const dateObj = new Date(date + 'T00:00:00');
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayOfWeek = dayNames[dateObj.getDay()];
+
+    // Check if doctor works on this day and has this slot available
+    const daySchedule = doctor.schedule?.find(s => s.day === dayOfWeek);
+    if (!daySchedule) {
+      return res.status(400).json({ message: 'Doctor does not work on this day' });
+    }
+
+    const doctorSlot = daySchedule.slots.find(s => s.slotNumber === slotNumber);
+    if (!doctorSlot || !doctorSlot.isAvailable) {
+      return res.status(400).json({ message: 'This time slot is not available in doctor\'s schedule' });
+    }
+
+    // Check if slot is already booked for this date
+    const existingAppointment = await Appointment.findOne({
+      doctorId,
+      date,
+      slotNumber,
+      status: { $in: ['scheduled', 'pending'] }
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({ message: 'This time slot is already booked' });
+    }
+
+    // Get start and end times from the fixed slots
+    const slotInfo = FIXED_TIME_SLOTS.find(s => s.slotNumber === slotNumber);
+
     // Create new appointment document
     const appointment = new Appointment({
       doctorId,
-      patientId: req.user._id, // Set patient from authenticated user
+      patientId: req.user._id,
       date,
-      startTime,
-      endTime,
+      slotNumber,
+      startTime: slotInfo.startTime,
+      endTime: slotInfo.endTime,
       reason,
-      status // Defaults to 'pending' if not provided
+      status: 'pending' // Doctor needs to accept it
     });
 
     // Save appointment to database

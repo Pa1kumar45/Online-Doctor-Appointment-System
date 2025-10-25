@@ -202,10 +202,10 @@ export const updateDoctorProfile = async (req, res) => {
       }
     });
 
-    // Save updated doctor profile
+    // Save updated doctor profile (this triggers Mongoose validation)
     await doctor.save();
     
-    console.log("from doctor profile", {...doctor.toObject(), role: "doctor"})
+    console.log("Doctor profile updated successfully", doctor._id);
     
     // Return updated profile with role information
     res.status(200).json({success: true, data: {...doctor.toObject(), role: "doctor"}});

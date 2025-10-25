@@ -13,6 +13,9 @@ import AuthLog from '../models/AuthLog.js';
  */
 const getDashboardStats = async (req, res) => {
   try {
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    
     // Get user counts
     const [
       totalDoctors,
@@ -30,12 +33,7 @@ const getDashboardStats = async (req, res) => {
       Patient.countDocuments({ verificationStatus: 'pending' }),
       Doctor.countDocuments({ isActive: false }),
       Patient.countDocuments({ isActive: false }),
-      Appointment.countDocuments({ 
-        date: { 
-          $gte: new Date().setHours(0, 0, 0, 0),
-          $lt: new Date().setHours(23, 59, 59, 999)
-        }
-      }),
+      Appointment.countDocuments({ date: today }),
       Appointment.countDocuments()
     ]);
 
@@ -113,10 +111,9 @@ const getAllUsers = async (req, res) => {
       
       if (search) {
         filter.$or = [
-          { firstName: { $regex: search, $options: 'i' } },
-          { lastName: { $regex: search, $options: 'i' } },
+          { name: { $regex: search, $options: 'i' } },
           { email: { $regex: search, $options: 'i' } },
-          { phone: { $regex: search, $options: 'i' } }
+          { contactNumber: { $regex: search, $options: 'i' } }
         ];
       }
       
@@ -127,7 +124,7 @@ const getAllUsers = async (req, res) => {
     if (!role || role === 'doctor') {
       const filter = buildFilter();
       const doctors = await Doctor.find(filter)
-        .select('firstName lastName email phone specialization verificationStatus isActive createdAt')
+        .select('name email contactNumber specialization verificationStatus isActive createdAt')
         .skip(skip)
         .limit(limitNum)
         .sort({ createdAt: -1 })
@@ -136,7 +133,7 @@ const getAllUsers = async (req, res) => {
       users.push(...doctors.map(doc => ({
         ...doc,
         userType: 'doctor',
-        fullName: `${doc.firstName} ${doc.lastName}`
+        fullName: doc.name
       })));
       
       if (!role) {
@@ -149,7 +146,7 @@ const getAllUsers = async (req, res) => {
     if (!role || role === 'patient') {
       const filter = buildFilter();
       const patients = await Patient.find(filter)
-        .select('firstName lastName email phone verificationStatus isActive createdAt')
+        .select('name email contactNumber verificationStatus isActive createdAt')
         .skip(skip)
         .limit(limitNum)
         .sort({ createdAt: -1 })
@@ -158,7 +155,7 @@ const getAllUsers = async (req, res) => {
       users.push(...patients.map(pat => ({
         ...pat,
         userType: 'patient',
-        fullName: `${pat.firstName} ${pat.lastName}`
+        fullName: pat.name
       })));
       
       if (!role) {
@@ -198,11 +195,11 @@ const getAllUsers = async (req, res) => {
 const getAllUsersFromBothCollections = async (pipeline) => {
   const [doctors, patients] = await Promise.all([
     Doctor.aggregate([
-      { $addFields: { userType: 'doctor', fullName: { $concat: ['$firstName', ' ', '$lastName'] } } },
+      { $addFields: { userType: 'doctor', fullName: '$name' } },
       ...pipeline.slice(1) // Skip the $unionWith stage
     ]),
     Patient.aggregate([
-      { $addFields: { userType: 'patient', fullName: { $concat: ['$firstName', ' ', '$lastName'] } } },
+      { $addFields: { userType: 'patient', fullName: '$name' } },
       ...pipeline.slice(1)
     ])
   ]);

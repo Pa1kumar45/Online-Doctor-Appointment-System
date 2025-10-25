@@ -23,7 +23,8 @@ import {
   updateAppointment,
   deleteAppointment,
   getDoctorAppointments,
-  getPatientAppointments
+  getPatientAppointments,
+  getAvailableSlots
   // updateAppointmentStatus
 } from '../controllers/appointmentController.js';
 import { protect } from '../middleware/auth.js';
@@ -41,6 +42,20 @@ router.use(protect);
  * General Appointment Routes
  * These routes provide access to appointment data based on user context
  */
+
+/**
+ * GET /api/appointments/available-slots/:doctorId
+ * Get available time slots for a doctor on a specific date
+ * 
+ * @route GET /api/appointments/available-slots/:doctorId?date=YYYY-MM-DD
+ * @access Private (Any authenticated user can check availability)
+ * @middleware protect - JWT authentication required
+ * @param {string} doctorId - Doctor's unique identifier
+ * @query {string} date - Date in YYYY-MM-DD format
+ * @description Get available 1-hour slots (9 AM - 9 PM) for a doctor on a specific date
+ * @returns {Object} List of available slots with slotNumber, startTime, endTime
+ */
+router.get('/available-slots/:doctorId', getAvailableSlots);
 
 /**
  * GET /api/appointments

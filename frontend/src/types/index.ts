@@ -22,7 +22,7 @@ export interface SignUpFormData {
   name: string;
   email: string;
   password: string;
-  role: 'doctor' | 'patient';
+  role: 'doctor' | 'patient' | 'admin' | 'super_admin';
   specialization?: string;
   qualification?: string;
   experience?: number;
@@ -64,6 +64,7 @@ export interface Appointment {
   doctorId?: string;
   patientId?: string;
   date: string;
+  slotNumber?: number;
   startTime: string;
   endTime:string;
   status: 'pending' | 'scheduled' | 'cancelled' | 'completed' | 'rescheduled';
@@ -115,7 +116,7 @@ export interface Message {
 export interface LoginCredentials {
   email: string;
   password: string;
-  role: 'doctor' | 'patient';
+  role: 'doctor' | 'patient' | 'admin' | 'super_admin';
 }
 
 export interface AuthResponse {
