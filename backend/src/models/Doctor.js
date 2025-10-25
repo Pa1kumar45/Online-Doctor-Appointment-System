@@ -104,6 +104,13 @@ const doctorSchema = new mongoose.Schema({
   passwordChangedAt: {
     type: Date // Timestamp of last password change
   },
+  passwordResetCount: {
+    type: Number,
+    default: 0 // Track number of times password has been reset via forgot password
+  },
+  passwordResetUsedAt: {
+    type: Date // Timestamp when password reset was used
+  },
   
   // Admin verification status (separate from email verification)
   verificationStatus:{
@@ -131,6 +138,12 @@ const doctorSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  lastLogin: {
+    type: Date
+  },
+  lastLogout: {
+    type: Date
   },
 }, {
   timestamps: true // Automatically add createdAt and updatedAt fields

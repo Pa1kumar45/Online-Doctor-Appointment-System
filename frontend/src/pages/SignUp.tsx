@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import OTPVerification from '../components/OTPVerification';
 import { SignUpFormData } from '../types/index.ts';
+import { authService } from '../services/auth.service';
 
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const {currentUser,signup } = useApp();
+  const { setCurrentUser } = useApp();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOTPModal, setShowOTPModal] = useState(false);
   const [formData, setFormData] = useState<SignUpFormData>({
     name: '',
     email: '',
@@ -20,10 +23,10 @@ const SignUp = () => {
     experience: 0
   });
 
-   // Clear any existing auth data on component mount
-  useEffect(() => {
-  }, []);
-
+  /**
+   * Handle signup form submission
+   * Step 1: Register user and send OTP for email verification
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -40,15 +43,72 @@ const SignUp = () => {
           }
         : formData;
 
-      // First, register the user
-     await signup(registrationData);
-      console.log("signup after data",currentUser);
+      console.log('Signup attempt:', registrationData);
 
-    } catch (err) {
-       console.error('Registration error:', err);
-      
+      // Step 1: Register the user - backend will send OTP to email
+      await authService.register(registrationData);
+
+      // Step 2: Show OTP modal for email verification
+      setShowOTPModal(true);
+
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.response?.data?.message || err.message || 'Registration failed');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /**
+   * Handle OTP verification
+   * Step 3: Verify OTP and complete signup
+   */
+  const handleVerifyOTP = async (otp: string) => {
+    try {
+      const response = await authService.verifyOTP({
+        email: formData.email,
+        otp,
+        role: formData.role,
+        purpose: 'registration'
+      });
+
+      console.log('OTP verified, signup successful:', response);
+
+      // Set current user in context
+      if (response.data) {
+        setCurrentUser(response.data);
+      }
+
+      // Close OTP modal
+      setShowOTPModal(false);
+
+      // Navigate based on role
+      if (formData.role === 'doctor') {
+        navigate('/profile'); // Doctors need to complete their profile
+      } else {
+        navigate('/'); // Patients go to doctor list
+      }
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      throw error; // Let OTPVerification component handle the error display
+    }
+  };
+
+  /**
+   * Handle OTP resend
+   * Resends OTP to user's email
+   */
+  const handleResendOTP = async () => {
+    try {
+      await authService.sendOTP({
+        email: formData.email,
+        role: formData.role,
+        purpose: 'registration'
+      });
+      console.log('OTP resent successfully');
+    } catch (error: any) {
+      console.error('Resend OTP error:', error);
+      throw error; // Let OTPVerification component handle the error display
     }
   };
 
@@ -216,6 +276,16 @@ const SignUp = () => {
           </div>
         </form>
       </div>
+
+      {/* OTP Verification Modal */}
+      <OTPVerification
+        isOpen={showOTPModal}
+        onClose={() => setShowOTPModal(false)}
+        onVerify={handleVerifyOTP}
+        onResend={handleResendOTP}
+        email={formData.email}
+        purpose="registration"
+      />
     </div>
   );
 };

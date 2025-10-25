@@ -40,9 +40,14 @@ import {
   validateResetPassword,
   validateChangePassword
 } from '../middleware/validation.js';
+import sessionRoutes from './sessions.js';
 
 // Create Express router instance
 const router = express.Router();
+
+// ============================================
+// PUBLIC ROUTES (No authentication required)
+// ============================================
 
 /**
  * POST /api/auth/register
@@ -200,7 +205,7 @@ router.post('/forgot-password', validateForgotPassword, forgotPassword);
  * @param {string} role - User role ('doctor', 'patient', or 'admin')
  * @returns {Object} Confirmation that password was reset
  */
-router.post('/reset-password/:token', validateResetPassword, resetPassword);
+router.post('/reset-password', validateResetPassword, resetPassword);
 
 /**
  * PUT /api/auth/change-password
@@ -218,5 +223,11 @@ router.post('/reset-password/:token', validateResetPassword, resetPassword);
  * @returns {Object} Confirmation that password was changed
  */
 router.put('/change-password', protect, validateChangePassword, changePassword);
+
+// ============================================
+// SESSION MANAGEMENT ROUTES (Protected)
+// ============================================
+// Include session management routes - must be at the end to avoid conflicts
+router.use('/', sessionRoutes);
 
 export default router;

@@ -21,7 +21,7 @@ import { Patient } from '../models/Patient.js'
 import Admin from '../models/Admin.js';
 import OTP from '../models/OTP.js';
 import { sendOTPEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordChangedEmail } from '../services/emailService.js';
-import { generateToken } from '../lib/utils.js';
+import { generateToken, logAuthEvent } from '../lib/utils.js';
 import crypto from 'crypto';
 
 
@@ -104,6 +104,16 @@ export const register = async (req, res) => {
     const existingPatient = await Patient.findOne({ email });
 
     if (existingDoctor || existingPatient) {
+      // Log failed registration attempt
+      await logAuthEvent({
+        req,
+        action: 'register',
+        email,
+        success: false,
+        failureReason: 'Email already registered',
+        metadata: { role }
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'User already exists with this email'
@@ -155,6 +165,17 @@ export const register = async (req, res) => {
     }
 
     console.log(`✅ OTP email sent to ${email}`);
+
+    // Log successful registration
+    await logAuthEvent({
+      req,
+      action: 'register',
+      email,
+      success: true,
+      userId: user._id,
+      userType: role === 'doctor' ? 'Doctor' : 'Patient',
+      metadata: { requiresVerification: true }
+    });
 
     // Return success response
     res.status(201).json({
@@ -212,6 +233,16 @@ export const login = async (req, res) => {
     
     // Return generic error if user not found (security: don't reveal if email exists)
     if (!user) {
+      // Log failed login attempt
+      await logAuthEvent({
+        req,
+        action: 'failed_login',
+        email,
+        success: false,
+        failureReason: 'User not found',
+        metadata: { role }
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Invalid credentials'
@@ -220,6 +251,18 @@ export const login = async (req, res) => {
 
     // Check if email is verified (required for login)
     if (!user.isEmailVerified) {
+      // Log failed login attempt
+      await logAuthEvent({
+        req,
+        action: 'failed_login',
+        email,
+        success: false,
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : 'Patient',
+        failureReason: 'Email not verified',
+        metadata: { role }
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Email not verified. Please verify your email first.',
@@ -229,6 +272,21 @@ export const login = async (req, res) => {
 
     // Check if account is suspended/inactive
     if (!user.isActive) {
+      // Log failed login attempt due to suspension
+      await logAuthEvent({
+        req,
+        action: 'failed_login',
+        email,
+        success: false,
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : 'Patient',
+        failureReason: 'Account suspended',
+        metadata: { 
+          role,
+          suspensionReason: user.suspensionReason 
+        }
+      });
+      
       return res.status(403).json({
         success: false,
         message: 'Account suspended',
@@ -241,6 +299,18 @@ export const login = async (req, res) => {
     // Verify password using the model's comparePassword method
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      // Log failed login attempt due to invalid password
+      await logAuthEvent({
+        req,
+        action: 'failed_login',
+        email,
+        success: false,
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : 'Patient',
+        failureReason: 'Invalid password',
+        metadata: { role }
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Invalid credentials'
@@ -266,6 +336,21 @@ export const login = async (req, res) => {
       name: user.name || user.firstName || 'User',
       otp: otpDoc.otp,
       purpose: 'login'
+    });
+
+    // Log successful login OTP request
+    await logAuthEvent({
+      req,
+      action: 'login',
+      email,
+      success: true,
+      userId: user._id,
+      userType: role === 'doctor' ? 'Doctor' : 'Patient',
+      metadata: { 
+        role,
+        otpSent: true,
+        requiresOTP: true 
+      }
     });
 
     // Prepare response
@@ -334,6 +419,20 @@ export const verifyOTP = async (req, res) => {
     const verification = await OTP.verifyOTP(email, otp, purpose);
 
     if (!verification.success) {
+      // Log failed OTP verification
+      await logAuthEvent({
+        req,
+        action: 'failed_otp',
+        email,
+        success: false,
+        failureReason: verification.message,
+        metadata: { 
+          purpose,
+          role,
+          attemptsRemaining: verification.attemptsRemaining 
+        }
+      });
+      
       return res.status(400).json({
         success: false,
         message: verification.message,
@@ -371,6 +470,17 @@ export const verifyOTP = async (req, res) => {
         // Don't fail the registration if welcome email fails
       }
 
+      // Log successful OTP verification for registration
+      await logAuthEvent({
+        req,
+        action: 'otp_verification',
+        email,
+        success: true,
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : 'Patient',
+        metadata: { purpose, emailVerified: true }
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Email verified successfully! You can now login.',
@@ -380,13 +490,48 @@ export const verifyOTP = async (req, res) => {
 
     // Handle login OTP verification
     if (purpose === 'login') {
-      // Generate JWT token and set as httpOnly cookie
-      generateToken(user._id, role, res);
+      // Store previous login timestamp BEFORE updating
+      const previousLoginTime = user.lastLogin;
+      
+      // Update lastLogin timestamp
+      user.lastLogin = new Date();
+      await user.save();
+      
+      // Generate JWT token and set as httpOnly cookie (also creates session)
+      // This will automatically enforce single device login (FR-1.4)
+      const token = await generateToken(user._id, role, res, req);
+
+      // Check if there were previous sessions (for notification)
+      const deviceInfo = req.headers['user-agent'] || 'Unknown device';
+
+      // Log successful OTP verification for login
+      await logAuthEvent({
+        req,
+        action: 'otp_verification',
+        email,
+        success: true,
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : 'Patient',
+        metadata: { 
+          purpose, 
+          loginCompleted: true,
+          singleDeviceEnforced: true,
+          deviceInfo
+        }
+      });
 
       return res.status(200).json({
         success: true,
         message: 'Login successful',
-        data: formatUserResponse(user, role)
+        data: formatUserResponse(user, role),
+        sessionInfo: {
+          singleDeviceEnforcement: true,
+          message: 'You have been logged in from this device. All other sessions have been terminated for security.'
+        },
+        loginInfo: {
+          previousLogin: previousLoginTime,
+          lastLogout: user.lastLogout
+        }
       });
     }
 
@@ -460,6 +605,17 @@ export const resendOTP = async (req, res) => {
       name: user.name || user.firstName || 'User',
       otp: otpDoc.otp,
       purpose: purpose
+    });
+
+    // Log OTP resend event
+    await logAuthEvent({
+      req,
+      action: 'otp_resend',
+      email,
+      success: true,
+      userId: user._id,
+      userType: role === 'doctor' ? 'Doctor' : 'Patient',
+      metadata: { purpose }
     });
 
     // Prepare response
@@ -558,14 +714,38 @@ export const getCurrentUser = async (req, res) => {
  */
 export const logout = async (req, res) => {
   try {
+    const token = req.cookies.token;
+    const userId = req.user?._id;
+    const userRole = req.userRole;
+    
+    // Update lastLogout timestamp for the user
+    if (userId && userRole) {
+      const UserModel = userRole === 'doctor' ? Doctor : userRole === 'patient' ? Patient : Admin;
+      await UserModel.findByIdAndUpdate(userId, {
+        lastLogout: new Date()
+      });
+      console.log(`✓ Updated lastLogout for user ${userId}`);
+    }
+    
+    // Revoke session in database if token exists
+    if (token) {
+      const Session = (await import('../models/Session.js')).default;
+      await Session.updateOne(
+        { token, isActive: true },
+        { isActive: false }
+      );
+      console.log('✓ Session revoked on logout');
+    }
+
     // Clear the JWT token cookie by setting it to empty with maxAge 0
     // This immediately expires the cookie on the client side
     res.cookie("token", "", {maxAge: 0});
 
-    res.status(200).json({success: true, message: 'logged out succesfully'})
+    res.status(200).json({success: true, message: 'Logged out successfully'})
     
   } catch (err) {
     console.log("error in logout", err);
+    res.status(500).json({success: false, message: 'Error during logout'});
   }
 }
 
@@ -604,6 +784,15 @@ export const adminLogin = async (req, res) => {
     const admin = await Admin.findOne({ email }).select('+password');
     
     if (!admin) {
+      // Log failed admin login attempt
+      await logAuthEvent({
+        req,
+        action: 'failed_admin_login',
+        email,
+        success: false,
+        failureReason: 'Admin not found'
+      });
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -612,6 +801,17 @@ export const adminLogin = async (req, res) => {
 
     // Check if admin account is active
     if (!admin.isActive) {
+      // Log failed admin login attempt due to suspension
+      await logAuthEvent({
+        req,
+        action: 'failed_admin_login',
+        email,
+        success: false,
+        userId: admin._id,
+        userType: 'Admin',
+        failureReason: 'Account suspended'
+      });
+      
       return res.status(403).json({
         success: false,
         message: 'Account is suspended. Please contact support.'
@@ -622,18 +822,53 @@ export const adminLogin = async (req, res) => {
     const isPasswordValid = await admin.comparePassword(password);
     
     if (!isPasswordValid) {
+      // Log failed admin login attempt due to invalid password
+      await logAuthEvent({
+        req,
+        action: 'failed_admin_login',
+        email,
+        success: false,
+        userId: admin._id,
+        userType: 'Admin',
+        failureReason: 'Invalid password'
+      });
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
+    // Capture previous login time before updating
+    const previousLoginTime = admin.lastlogin;
+
     // Update last login timestamp
-    admin.lastlogin = new Date();
+    const currentLoginTime = new Date();
+    admin.lastlogin = currentLoginTime;
     await admin.save();
 
-    // Generate JWT token with admin role and set cookie
-    const token = generateToken(admin._id, admin.role, res);
+    // Log successful admin login
+    await logAuthEvent({
+      req,
+      action: 'admin_login',
+      email,
+      success: true,
+      userId: admin._id,
+      userType: 'Admin',
+      metadata: { 
+        role: admin.role,
+        permissions: admin.Permissions || []
+      }
+    });
+
+    // Generate JWT token with admin role and set cookie (also creates session)
+    const token = await generateToken(admin._id, admin.role, res, req);
+
+    // Prepare login info with timestamps (only previous login and last logout)
+    const loginInfo = {
+      previousLogin: previousLoginTime ? previousLoginTime.toISOString() : undefined,
+      lastLogout: admin.lastLogout ? admin.lastLogout.toISOString() : undefined
+    };
 
     // Prepare admin data for response (exclude password)
     const adminData = {
@@ -650,7 +885,8 @@ export const adminLogin = async (req, res) => {
       success: true,
       message: 'Login successful',
       user: adminData,
-      data: adminData
+      data: adminData,
+      loginInfo
     });
   } catch (error) {
     console.error('Admin login error:', error);
@@ -662,10 +898,10 @@ export const adminLogin = async (req, res) => {
 };
 
 /**
- * Request password reset - Step 1: Generate and send reset token
+ * Request password reset - Step 1: Send OTP for password reset
  * 
- * This function handles forgot password requests by generating a secure reset token
- * and sending it to the user's email address.
+ * This function handles forgot password requests by generating and sending
+ * an OTP to the user's email address for verification.
  * 
  * @async
  * @function forgotPassword
@@ -675,9 +911,9 @@ export const adminLogin = async (req, res) => {
  * @param {string} req.body.role - User role ('doctor', 'patient', or 'admin')
  * @param {Object} res - Express response object
  * 
- * @returns {Object} JSON response confirming email was sent
+ * @returns {Object} JSON response confirming OTP was sent
  * @throws {400} If email not found
- * @throws {500} If token generation or email sending fails
+ * @throws {500} If OTP generation or email sending fails
  */
 export const forgotPassword = async (req, res) => {
   try {
@@ -689,48 +925,98 @@ export const forgotPassword = async (req, res) => {
     user = await UserModel.findOne({ email });
 
     if (!user) {
+      // Log failed password reset request
+      await logAuthEvent({
+        req,
+        action: 'password_reset_request',
+        email,
+        success: false,
+        failureReason: 'User not found',
+        metadata: { role }
+      });
+      
       // Return generic message for security (don't reveal if email exists)
       return res.status(400).json({
         success: false,
-        message: 'If an account exists with this email, a password reset link has been sent.'
+        message: 'If an account exists with this email, a password reset OTP has been sent.'
       });
     }
 
-    // Generate reset token (32 bytes random string)
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    // ✅ CHECK: Has user already used password reset? (LIFETIME LIMIT)
+    if (user.passwordResetCount && user.passwordResetCount >= 1) {
+      // Log failed password reset request
+      await logAuthEvent({
+        req,
+        action: 'password_reset_request',
+        email,
+        success: false,
+        failureReason: 'Password reset limit exceeded (lifetime limit: 1)',
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : role === 'patient' ? 'Patient' : 'Admin',
+        metadata: { 
+          role, 
+          resetCount: user.passwordResetCount,
+          lastResetAt: user.passwordResetUsedAt 
+        }
+      });
+      
+      return res.status(403).json({
+        success: false,
+        message: 'Your 1 attempt for password reset has been completed. You cannot reset your password again. Please contact support if you need assistance.',
+        resetLimitReached: true,
+        resetCount: user.passwordResetCount,
+        lastResetDate: user.passwordResetUsedAt
+      });
+    }
 
-    // Hash token before storing in database (for security)
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Save hashed token and expiration to user document
-    user.passwordResetToken = hashedToken;
-    user.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour from now
-    await user.save({ validateBeforeSave: false });
+    // Delete any existing OTP for this email and purpose
+    await OTP.deleteMany({ 
+      email, 
+      purpose: 'password-reset'
+    });
 
-    // Send reset email with plain token (not hashed)
+    // Save OTP to database (expires in 10 minutes)
+    const otpDoc = await OTP.create({
+      email,
+      otp,
+      purpose: 'password-reset',
+      role,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    });
+
+    // Send OTP email
     try {
-      await sendPasswordResetEmail({
+      await sendOTPEmail({
         email: user.email,
         name: user.name || user.firstName || 'User',
-        resetToken: resetToken, // Send plain token in email
-        role: role
+        otp: otp,
+        purpose: 'Password Reset'
+      });
+
+      // Log successful password reset request
+      await logAuthEvent({
+        req,
+        action: 'password_reset_otp_sent',
+        email,
+        success: true,
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : role === 'patient' ? 'Patient' : 'Admin',
+        metadata: { role, purpose: 'password-reset' }
       });
 
       res.status(200).json({
         success: true,
-        message: 'Password reset link sent to your email. Please check your inbox.',
+        message: 'Password reset OTP sent to your email. Please check your inbox.',
         email: user.email
       });
     } catch (emailError) {
-      // If email fails, remove token from database
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-      await user.save({ validateBeforeSave: false });
+      // If email fails, delete OTP from database
+      await OTP.deleteOne({ _id: otpDoc._id });
 
-      throw new Error('Failed to send reset email. Please try again later.');
+      throw new Error('Failed to send OTP email. Please try again later.');
     }
 
   } catch (error) {
@@ -744,55 +1030,115 @@ export const forgotPassword = async (req, res) => {
 };
 
 /**
- * Reset password - Step 2: Verify token and update password
+ * Reset password - Step 2: Verify OTP and update password
  * 
- * This function validates the reset token and updates the user's password.
+ * This function validates the OTP for password reset and updates the user's password.
  * 
  * @async
  * @function resetPassword
  * @param {Object} req - Express request object
- * @param {Object} req.params - URL parameters
- * @param {string} req.params.token - Password reset token from URL
  * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.otp - OTP code from email
  * @param {string} req.body.password - New password
+ * @param {string} req.body.confirmPassword - Password confirmation
  * @param {string} req.body.role - User role ('doctor', 'patient', or 'admin')
  * @param {Object} res - Express response object
  * 
  * @returns {Object} JSON response confirming password was reset
- * @throws {400} If token is invalid or expired
+ * @throws {400} If OTP is invalid or expired
  * @throws {500} If password update fails
  */
 export const resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { password, role } = req.body;
+    const { email, otp, password, confirmPassword, role } = req.body;
 
-    // Hash the token from URL to match stored hash
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(token)
-      .digest('hex');
-
-    // Find user with matching token and check expiration
-    const UserModel = role === 'doctor' ? Doctor : role === 'patient' ? Patient : Admin;
-    const user = await UserModel.findOne({
-      passwordResetToken: hashedToken,
-      passwordResetExpires: { $gt: Date.now() } // Token not expired
-    });
-
-    if (!user) {
+    // Validate passwords match
+    if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token. Please request a new password reset.'
+        message: 'Passwords do not match'
       });
     }
 
+    // Find and validate OTP - ensure it hasn't been used already
+    const otpDoc = await OTP.findOne({
+      email,
+      otp,
+      purpose: 'password-reset',
+      verified: false  // Only find OTPs that haven't been used yet
+    });
+
+    if (!otpDoc) {
+      // Log failed password reset attempt
+      await logAuthEvent({
+        req,
+        action: 'password_reset_failed',
+        email,
+        success: false,
+        failureReason: 'Invalid or already used OTP',
+        metadata: { role }
+      });
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid, expired, or already used OTP. Please request a new password reset.'
+      });
+    }
+
+    // Check if OTP is expired
+    if (new Date() > otpDoc.expiresAt) {
+      await OTP.deleteOne({ _id: otpDoc._id });
+      
+      await logAuthEvent({
+        req,
+        action: 'password_reset_failed',
+        email,
+        success: false,
+        failureReason: 'OTP expired',
+        metadata: { role }
+      });
+      
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new password reset.'
+      });
+    }
+
+    // Find user based on role
+    const UserModel = role === 'doctor' ? Doctor : role === 'patient' ? Patient : Admin;
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
+      await OTP.deleteOne({ _id: otpDoc._id });
+      
+      return res.status(400).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Mark OTP as verified BEFORE changing password (prevents reuse even if password change fails)
+    await otpDoc.markAsVerified();
+
     // Update password (will be hashed by pre-save middleware)
     user.password = password;
-    user.passwordResetToken = undefined; // Clear reset token
-    user.passwordResetExpires = undefined; // Clear expiration
     user.passwordChangedAt = Date.now(); // Record password change time
+    
+    // ✅ INCREMENT PASSWORD RESET COUNTER (LIFETIME TRACKING)
+    user.passwordResetCount = (user.passwordResetCount || 0) + 1;
+    user.passwordResetUsedAt = new Date();
+    
+    // Clear any reset tokens if they exist
+    if (user.passwordResetToken) {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+    }
+    
     await user.save();
+
+    // Delete used OTP after successful password reset
+    await OTP.deleteOne({ _id: otpDoc._id });
 
     // Send confirmation email
     try {
@@ -804,6 +1150,17 @@ export const resetPassword = async (req, res) => {
       console.error('Password changed email error:', emailError);
       // Don't fail the reset if email fails
     }
+
+    // Log successful password reset
+    await logAuthEvent({
+      req,
+      action: 'password_reset_success',
+      email: user.email,
+      success: true,
+      userId: user._id,
+      userType: role === 'doctor' ? 'Doctor' : role === 'patient' ? 'Patient' : 'Admin',
+      metadata: { role }
+    });
 
     res.status(200).json({
       success: true,
@@ -861,6 +1218,18 @@ export const changePassword = async (req, res) => {
     // Verify current password
     const isPasswordCorrect = await user.comparePassword(currentPassword);
     if (!isPasswordCorrect) {
+      // Log failed password change attempt
+      await logAuthEvent({
+        req,
+        action: 'password_change',
+        email: user.email,
+        success: false,
+        userId: user._id,
+        userType: role === 'doctor' ? 'Doctor' : role === 'patient' ? 'Patient' : 'Admin',
+        failureReason: 'Current password incorrect',
+        metadata: { role }
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Current password is incorrect'
@@ -891,6 +1260,17 @@ export const changePassword = async (req, res) => {
       console.error('Password changed email error:', emailError);
       // Don't fail if email fails
     }
+
+    // Log successful password change
+    await logAuthEvent({
+      req,
+      action: 'password_change',
+      email: user.email,
+      success: true,
+      userId: user._id,
+      userType: role === 'doctor' ? 'Doctor' : role === 'patient' ? 'Patient' : 'Admin',
+      metadata: { role }
+    });
 
     res.status(200).json({
       success: true,

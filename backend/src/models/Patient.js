@@ -130,6 +130,13 @@ const patientSchema = new mongoose.Schema({
   passwordChangedAt: {
     type: Date // Timestamp of last password change
   },
+  passwordResetCount: {
+    type: Number,
+    default: 0 // Track number of times password has been reset via forgot password
+  },
+  passwordResetUsedAt: {
+    type: Date // Timestamp when password reset was used
+  },
   
   // Admin verification status (separate from email verification)
   verificationStatus: {
@@ -154,6 +161,12 @@ const patientSchema = new mongoose.Schema({
   suspendedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin'
+  },
+  lastLogin: {
+    type: Date
+  },
+  lastLogout: {
+    type: Date
   },
 }, {
   timestamps: true // Automatically add createdAt and updatedAt fields

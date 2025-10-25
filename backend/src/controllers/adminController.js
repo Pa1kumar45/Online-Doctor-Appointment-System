@@ -4,6 +4,7 @@ import Patient from '../models/Patient.js';
 import Admin from '../models/Admin.js';
 import AdminActionLog from '../models/AdminActionLog.js';
 import Appointment from '../models/Appointment.js';
+import AuthLog from '../models/AuthLog.js';
 
 /**
  * Get dashboard statistics
@@ -479,11 +480,277 @@ const getAdminLogs = async (req, res) => {
   }
 };
 
+/**
+ * Get authentication logs
+ * @route GET /api/admin/auth-logs
+ * @access Admin only
+ * @description Get all authentication logs with filtering and pagination
+ */
+const getAuthLogs = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 50,
+      action,
+      success,
+      email,
+      userId,
+      userType,
+      startDate,
+      endDate
+    } = req.query;
+
+    // Build filter query
+    const filters = {};
+    
+    if (action) filters.action = action;
+    if (success !== undefined) filters.success = success === 'true';
+    if (email) filters.email = { $regex: email, $options: 'i' }; // Case-insensitive search
+    if (userId) filters.userId = userId;
+    if (userType) filters.userType = userType;
+    
+    // Date range filter
+    if (startDate || endDate) {
+      filters.createdAt = {};
+      if (startDate) filters.createdAt.$gte = new Date(startDate);
+      if (endDate) filters.createdAt.$lte = new Date(endDate);
+    }
+
+    // Pagination options
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sortBy: 'createdAt',
+      sortOrder: -1 // Most recent first
+    };
+
+    // Get logs using the model's static method
+    const result = await AuthLog.getLogs(filters, options);
+
+    res.json({
+      success: true,
+      data: result.logs,
+      pagination: result.pagination,
+      filters: {
+        action,
+        success,
+        email,
+        userId,
+        userType,
+        startDate,
+        endDate
+      }
+    });
+  } catch (error) {
+    console.error('Get auth logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching authentication logs',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Get authentication logs for a specific user
+ * @route GET /api/admin/auth-logs/user/:userId
+ * @access Admin only
+ * @description Get all authentication logs for a specific user
+ */
+const getUserAuthLogs = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sortBy: 'createdAt',
+      sortOrder: -1
+    };
+
+    // Get user-specific logs
+    const result = await AuthLog.getUserLogs(userId, options);
+
+    res.json({
+      success: true,
+      data: result.logs,
+      pagination: result.pagination,
+      userId
+    });
+  } catch (error) {
+    console.error('Get user auth logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user authentication logs',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Get authentication logs by email
+ * @route GET /api/admin/auth-logs/email/:email
+ * @access Admin only
+ * @description Get all authentication logs for a specific email (useful for failed login attempts)
+ */
+const getAuthLogsByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sortBy: 'createdAt',
+      sortOrder: -1
+    };
+
+    // Get email-specific logs
+    const result = await AuthLog.getLogsByEmail(email, options);
+
+    res.json({
+      success: true,
+      data: result.logs,
+      pagination: result.pagination,
+      email
+    });
+  } catch (error) {
+    console.error('Get auth logs by email error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching authentication logs by email',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Get authentication statistics
+ * @route GET /api/admin/auth-logs/stats
+ * @access Admin only
+ * @description Get authentication statistics and analytics
+ */
+const getAuthStats = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    // Get statistics
+    const stats = await AuthLog.getStats(startDate, endDate);
+
+    // Get total counts
+    const filters = {};
+    if (startDate || endDate) {
+      filters.createdAt = {};
+      if (startDate) filters.createdAt.$gte = new Date(startDate);
+      if (endDate) filters.createdAt.$lte = new Date(endDate);
+    }
+
+    const [totalLogs, successfulLogs, failedLogs] = await Promise.all([
+      AuthLog.countDocuments(filters),
+      AuthLog.countDocuments({ ...filters, success: true }),
+      AuthLog.countDocuments({ ...filters, success: false })
+    ]);
+
+    // Get top failure reasons
+    const failureReasons = await AuthLog.aggregate([
+      {
+        $match: {
+          ...filters,
+          success: false,
+          failureReason: { $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: '$failureReason',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      },
+      {
+        $limit: 10
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          total: totalLogs,
+          successful: successfulLogs,
+          failed: failedLogs,
+          successRate: totalLogs > 0 ? ((successfulLogs / totalLogs) * 100).toFixed(2) : 0
+        },
+        actionStats: stats,
+        topFailureReasons: failureReasons,
+        dateRange: {
+          startDate: startDate || 'all time',
+          endDate: endDate || 'present'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get auth stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching authentication statistics',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Get failed login attempts for security monitoring
+ * @route GET /api/admin/auth-logs/failed-attempts
+ * @access Admin only
+ * @description Get recent failed login attempts for security monitoring
+ */
+const getFailedLoginAttempts = async (req, res) => {
+  try {
+    const { email, timeWindow = 15 } = req.query;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email parameter is required'
+      });
+    }
+
+    const attempts = await AuthLog.getFailedAttempts(email, parseInt(timeWindow));
+
+    res.json({
+      success: true,
+      data: {
+        email,
+        failedAttempts: attempts.length,
+        timeWindow: `${timeWindow} minutes`,
+        attempts
+      }
+    });
+  } catch (error) {
+    console.error('Get failed attempts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching failed login attempts',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export {
   getDashboardStats,
   getAllUsers,
   verifyUser,
   toggleUserStatus,
   updateUserRole,
-  getAdminLogs
+  getAdminLogs,
+  getAuthLogs,
+  getUserAuthLogs,
+  getAuthLogsByEmail,
+  getAuthStats,
+  getFailedLoginAttempts
+
 };

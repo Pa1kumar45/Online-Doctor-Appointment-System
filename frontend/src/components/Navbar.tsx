@@ -87,6 +87,13 @@ const Navbar = () => {
                 >
                   Sign Up
                 </Link>
+                <Link
+                  to="/admin/login"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                >
+                  <span className="mr-1">🛡️</span>
+                  Admin
+                </Link>
               </>
             )}
             {/* <button
@@ -168,6 +175,13 @@ const Navbar = () => {
                   onClick={toggleMenu}
                 >
                   Sign Up
+                </Link>
+                <Link
+                  to="/admin/login"
+                  className="block text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={toggleMenu}
+                >
+                  🛡️ Admin Portal
                 </Link>
               </>
             )}

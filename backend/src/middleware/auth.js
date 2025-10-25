@@ -18,6 +18,7 @@ import jwt from 'jsonwebtoken';
 import { Doctor } from '../../src/models/Doctor.js';
 import { Patient } from '../../src/models/Patient.js';
 import Admin from '../models/Admin.js';
+import Session from '../models/Session.js';
 
 /**
  * Verify and decode JWT token
@@ -109,10 +110,24 @@ export const protect = async (req, res, next) => {
      return res.status(401).json({success: false, message: " Invalid"})
     }
 
+    // Validate session exists and is active
+    const session = await Session.findByToken(token);
+    if (!session) {
+      // Session doesn't exist or is expired
+      return res.status(401).json({
+        success: false,
+        message: 'Session expired or invalid. Please login again.'
+      });
+    }
+
+    // Update session activity timestamp
+    await Session.updateActivity(token);
+
     // Populate request object with authenticated user data
     req.token = token;
     req.user = user;
     req.userRole = role;
+    req.session = session; // Add session to request
     next(); // Continue to next middleware/route handler
   } catch (error) {
     console.log("eroror", error)

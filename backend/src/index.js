@@ -48,6 +48,9 @@ import patientRoutes from './routes/patients.js';        // Patient management e
 import appointmentRoutes from './routes/appointments.js'; // Appointment booking endpoints
 import adminRoutes from './routes/admin.js';             // Admin management endpoints
 
+// Utilities
+import { startSessionCleanup } from './lib/sessionCleanup.js'; // Session cleanup scheduler
+
 // Create Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
@@ -137,7 +140,11 @@ app.use('/api/admin', adminRoutes);
 
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medical_app')
-  .then(() => console.log('Connected to MongoDB'))
+  .then(() => {
+    console.log('Connected to MongoDB');
+    // Start session cleanup scheduler (runs every hour)
+    startSessionCleanup(60);
+  })
   .catch((err) => console.error('MongoDB connection error:', err));
 
 /**

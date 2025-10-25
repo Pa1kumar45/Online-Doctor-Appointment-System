@@ -121,8 +121,15 @@ export interface LoginCredentials {
 export interface AuthResponse {
   success:boolean;
   message:string;
-    data: Doctor | Patient;
-  
+  data: Doctor | Patient;
+  sessionInfo?: {
+    singleDeviceEnforcement: boolean;
+    message: string;
+  };
+  loginInfo?: {
+    previousLogin?: string;
+    lastLogout?: string;
+  };
 }
 
 export interface MedicalRecord {

@@ -2,7 +2,9 @@ import React, { useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import OTPVerification from '../components/OTPVerification';
 import { AlertTriangle, X } from 'lucide-react';
+import { authService } from '../services/auth.service';
 
 interface LoginFormData {
   email: string;
@@ -17,19 +19,21 @@ interface SuspensionInfo {
 
 const Login = () => {
   const navigate = useNavigate();
-  const {login} = useApp();
+  const { setCurrentUser, showLoginInfoToast } = useApp();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suspensionInfo, setSuspensionInfo] = useState<SuspensionInfo | null>(null);
+  const [showOTPModal, setShowOTPModal] = useState(false);
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
     role: 'patient'
   });
 
-  // Clear any existing auth data on component mount
-
-
+  /**
+   * Handle initial login form submission
+   * Step 1: Send credentials to backend, which will send OTP to email
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -37,11 +41,13 @@ const Login = () => {
       setError(null);
       setSuspensionInfo(null);
       
-      // First, perform login
-      console.log('formData');
-      console.log(formData);
+      console.log('Login attempt:', formData);
        
-      await login(formData);
+      // Step 1: Initiate login - backend will send OTP
+      await authService.login(formData);
+      
+      // Step 2: Show OTP modal for verification
+      setShowOTPModal(true);
       
     } catch (err: any) {
       console.error('Login error:', err);
@@ -53,10 +59,75 @@ const Login = () => {
           suspendedAt: err.response.data.suspendedAt
         });
       } else {
-        setError(err.response?.data?.message || 'Invalid credentials');
+        setError(err.response?.data?.message || err.message || 'Invalid credentials');
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /**
+   * Handle OTP verification
+   * Step 3: Verify OTP and complete login
+   */
+  const handleVerifyOTP = async (otp: string) => {
+    try {
+      const response = await authService.verifyOTP({
+        email: formData.email,
+        otp,
+        role: formData.role,
+        purpose: 'login'
+      });
+
+      console.log('OTP verified, login successful:', response);
+
+      // Set current user in context
+      if (response.data) {
+        setCurrentUser(response.data);
+      }
+
+      // Check for session conflict notification (FR-1.4)
+      if (response.sessionInfo?.singleDeviceEnforcement) {
+        console.log('Single device enforcement:', response.sessionInfo.message);
+        // You could show a toast notification here if desired
+        // For now, it's logged and the user is logged in successfully
+      }
+
+      // Show login info toast if available
+      if (response.loginInfo) {
+        showLoginInfoToast(response.loginInfo);
+      }
+
+      // Close OTP modal
+      setShowOTPModal(false);
+
+      // Navigate based on role
+      if (formData.role === 'doctor') {
+        navigate('/appointments');
+      } else {
+        navigate('/');
+      }
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      throw error; // Let OTPVerification component handle the error display
+    }
+  };
+
+  /**
+   * Handle OTP resend
+   * Resends OTP to user's email
+   */
+  const handleResendOTP = async () => {
+    try {
+      await authService.sendOTP({
+        email: formData.email,
+        role: formData.role,
+        purpose: 'login'
+      });
+      console.log('OTP resent successfully');
+    } catch (error: any) {
+      console.error('Resend OTP error:', error);
+      throw error; // Let OTPVerification component handle the error display
     }
   };
 
@@ -150,8 +221,28 @@ const Login = () => {
               {isLoading ? <LoadingSpinner /> : 'Sign in'}
             </button>
           </div>
+
+          {/* Forgot Password Link */}
+          <div className="text-center">
+            <a
+              href="/forgot-password"
+              className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Forgot your password?
+            </a>
+          </div>
         </form>
       </div>
+
+      {/* OTP Verification Modal */}
+      <OTPVerification
+        isOpen={showOTPModal}
+        onClose={() => setShowOTPModal(false)}
+        onVerify={handleVerifyOTP}
+        onResend={handleResendOTP}
+        email={formData.email}
+        purpose="login"
+      />
 
       {/* Suspension Modal */}
       {suspensionInfo && (

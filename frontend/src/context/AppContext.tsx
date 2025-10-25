@@ -11,6 +11,14 @@ import axios from '../utils/axios';
 import { Doctor, Patient, SignUpFormData, LoginCredentials } from '../types/index';
 
 /**
+ * Login information interface - timestamp data for login banner
+ */
+export interface LoginInfo {
+  previousLogin?: string;
+  lastLogout?: string;
+}
+
+/**
  * Theme context interface - defines theme-related state and functions
  */
 interface ThemeContextType {
@@ -29,7 +37,12 @@ interface AppContextType extends ThemeContextType {
   logout: () => void;                                       // Logout function
   signup: (data: SignUpFormData) => void;                  // User registration function
   login: (data: LoginCredentials) => void;                 // User login function
+  sendOTP: (data: { email: string; role: string; purpose: 'login' | 'registration' }) => Promise<void>; // Send OTP function
+  verifyOTP: (data: { email: string; otp: string; role: string; purpose: 'login' | 'registration' }) => Promise<any>; // Verify OTP function
   getCurrentUser: () => Promise<{ data: { data: any; success: boolean; message: string } }>; // Get current user from server
+  loginInfo: LoginInfo | null;                             // Login timestamp information
+  showLoginInfoToast: (info: LoginInfo) => void;           // Show login info toast
+  hideLoginInfoToast: () => void;                          // Hide login info toast
 }
 
 // Create the app context
@@ -52,6 +65,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Global loading and error states (currently unused but available for future use)
     const [isLoading] = useState(false);
     const [error] = useState<string | null>(null);
+
+    // Login info toast state
+    const [loginInfo, setLoginInfo] = useState<LoginInfo | null>(null);
 
     // Apply dark mode class to html element
     useEffect(() => {
@@ -126,11 +142,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     /**
+     * Send OTP function - requests OTP to be sent to user's email
+     * Used for login and signup verification
+     */
+    const sendOTP = async (data: { email: string; role: string; purpose: 'login' | 'registration' }) => {
+        try {
+            const response = await axios.post('/auth/send-otp', data);
+            console.log('OTP sent successfully:', response.data);
+        } catch (error) {
+            console.error('Error sending OTP:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Verify OTP function - verifies OTP and completes authentication
+     * Updates current user state on successful verification
+     */
+    const verifyOTP = async (data: { email: string; otp: string; role: string; purpose: 'login' | 'registration' }) => {
+        try {
+            const response = await axios.post('/auth/verify-otp', data);
+            console.log('OTP verified successfully:', response.data);
+            
+            // Set current user if verification successful
+            if (response.data.data) {
+                setCurrentUser(response.data.data);
+            }
+            
+            return response.data;
+        } catch (error) {
+            console.error('Error verifying OTP:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Theme toggle function - switches between light and dark modes
      * Uses useCallback for performance optimization
      */
     const toggleDarkMode = useCallback(() => {
         setIsDarkMode((prev: boolean) => !prev);
+    }, []);
+
+    /**
+     * Show login info toast - displays login/logout timestamps
+     */
+    const showLoginInfoToast = useCallback((info: LoginInfo) => {
+        setLoginInfo(info);
+    }, []);
+
+    /**
+     * Hide login info toast - clears login info and hides toast
+     */
+    const hideLoginInfoToast = useCallback(() => {
+        setLoginInfo(null);
     }, []);
 
     // Provide all context values to child components
@@ -146,7 +211,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 logout,
                 signup,
                 login,
-                getCurrentUser
+                sendOTP,
+                verifyOTP,
+                getCurrentUser,
+                loginInfo,
+                showLoginInfoToast,
+                hideLoginInfoToast
             }}
         >
             {children}
