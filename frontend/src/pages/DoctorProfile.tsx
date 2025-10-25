@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Clock, Plus, Trash2, GraduationCap, Briefcase, Phone, Image } from 'lucide-react';
+import { User, Mail, Calendar, Clock, Plus, Trash2, GraduationCap, Briefcase, Phone, Image, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 import { Doctor, Schedule, Slot } from '../types/index.ts';
 
 import { useApp } from '../context/AppContext';
@@ -231,6 +233,15 @@ const DoctorProfile = () => {
                 </p>
               </div>
             </div>
+            
+            {/* Session Management Link */}
+            <Link
+              to="/sessions"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              Manage Sessions
+            </Link>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -396,6 +407,16 @@ const DoctorProfile = () => {
             </button>
           </form>
         </div>
+      </div>
+
+      {/* Change Password Section */}
+      <div className="mt-8">
+        <ChangePasswordForm 
+          onSuccess={() => {
+            setSuccess('Password changed successfully! Please use your new password for future logins.');
+            setTimeout(() => setSuccess(null), 5000);
+          }}
+        />
       </div>
     </div>
   );

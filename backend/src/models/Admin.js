@@ -29,6 +29,13 @@ passwordResetExpires: {
 passwordChangedAt: {
   type: Date // Timestamp of last password change
 },
+passwordResetCount: {
+  type: Number,
+  default: 0 // Track number of times password has been reset via forgot password
+},
+passwordResetUsedAt: {
+  type: Date // Timestamp when password reset was used
+},
 role: {
     type: String,
     default: 'admin',
@@ -43,6 +50,9 @@ role: {
     enum:['user_management','appoinment_management', 'system_settings', 'reports'],
   }],
   lastlogin:{
+    type:Date,
+  },
+  lastLogout:{
     type:Date,
   },
   createdBy:{

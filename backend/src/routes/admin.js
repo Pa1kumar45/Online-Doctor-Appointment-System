@@ -5,7 +5,12 @@ import {
   verifyUser,
   toggleUserStatus,
   updateUserRole,
-  getAdminLogs
+  getAdminLogs,
+  getAuthLogs,
+  getUserAuthLogs,
+  getAuthLogsByEmail,
+  getAuthStats,
+  getFailedLoginAttempts
 } from '../controllers/adminController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
@@ -26,5 +31,12 @@ router.put('/users/:id/role', updateUserRole);
 
 // Admin logs
 router.get('/logs', getAdminLogs);
+
+// Authentication logs - IMPORTANT: Specific routes MUST come before parameterized routes
+router.get('/auth-logs/stats', getAuthStats);
+router.get('/auth-logs/failed-attempts', getFailedLoginAttempts);
+router.get('/auth-logs/user/:userId', getUserAuthLogs);
+router.get('/auth-logs/email/:email', getAuthLogsByEmail);
+router.get('/auth-logs', getAuthLogs);
 
 export default router;
