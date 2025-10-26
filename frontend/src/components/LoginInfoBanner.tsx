@@ -1,6 +1,43 @@
+/**
+ * LoginInfoBanner Component
+ * 
+ * Displays user's last login and logout information as a banner at the top of the page.
+ * Provides session tracking information to enhance security awareness.
+ * 
+ * Features:
+ * - Shows last login timestamp
+ * - Shows last logout timestamp
+ * - Handles first-time login scenario
+ * - Manual close button
+ * - Readable date formatting
+ * - Dark mode support
+ * 
+ * Display Logic:
+ * - Both timestamps: Shows both login and logout
+ * - Only login: Shows last login time
+ * - Neither: Shows "first login" message
+ * 
+ * @component
+ * @param {LoginInfoBannerProps} props - Component props
+ * @param {Object} props.loginInfo - Login information object
+ * @param {string} [props.loginInfo.previousLogin] - ISO timestamp of previous login
+ * @param {string} [props.loginInfo.lastLogout] - ISO timestamp of last logout
+ * @param {Function} props.onClose - Callback function to close the banner
+ * 
+ * @example
+ * return (
+ *   <LoginInfoBanner 
+ *     loginInfo={{ previousLogin: '2024-01-15T10:30:00Z' }}
+ *     onClose={() => console.log('Banner closed')}
+ *   />
+ * )
+ */
 import React from 'react';
 import { Info, X } from 'lucide-react';
 
+/**
+ * Props interface for LoginInfoBanner component
+ */
 interface LoginInfoBannerProps {
   loginInfo: {
     previousLogin?: string;
@@ -10,14 +47,17 @@ interface LoginInfoBannerProps {
 }
 
 /**
- * LoginInfoBanner Component
- * 
- * Minimal banner that displays last login/logout information.
- * Shows at the top of the page, always visible until closed.
+ * LoginInfoBanner Component Implementation
  */
 const LoginInfoBanner: React.FC<LoginInfoBannerProps> = ({ loginInfo, onClose }) => {
   
-  // Format date to readable string
+  /**
+   * Format date to human-readable string
+   * Converts ISO timestamp to localized date and time format
+   * 
+   * @param {string} [dateString] - ISO 8601 date string
+   * @returns {string} Formatted date string or 'Never' if not provided
+   */
   const formatDate = (dateString?: string): string => {
     if (!dateString) return 'Never';
     

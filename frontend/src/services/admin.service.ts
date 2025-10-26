@@ -1,17 +1,34 @@
-// frontend/src/services/admin.service.ts
-import axios from '../utils/axios';
-import { DashboardStats, UserManagementUser, AdminActionLog, UserFilters } from '../types/admin';
-
 /**
  * Admin Service
- * Handles all admin-related API calls for user management dashboard
+ * 
+ * Handles all admin-related API calls for user management dashboard.
+ * Provides functionality for:
+ * - Dashboard statistics
+ * - User management (list, verify, suspend, activate, delete)
+ * - Authentication logs
+ * - Failed login attempts tracking
+ * 
+ * @class AdminService
  */
+
+// frontend/src/services/admin.service.ts
+import axios from '../utils/axios';
+import { DashboardStats, UserFilters } from '../types/admin';
+
 class AdminService {
   private baseURL = '/admin';
 
   /**
    * Get dashboard statistics
-   * @returns Promise<DashboardStats> Dashboard statistics
+   * 
+   * Fetches overview statistics for admin dashboard including:
+   * - Total users count
+   * - Pending verifications
+   * - Active users
+   * - Recent activity
+   * 
+   * @returns {Promise<DashboardStats>} Dashboard statistics
+   * @throws {Error} If fetch fails
    */
   async getDashboardStats(): Promise<DashboardStats> {
     try {
@@ -25,8 +42,17 @@ class AdminService {
 
   /**
    * Get all users with filtering and pagination
-   * @param filters UserFilters object with optional filtering parameters
-   * @returns Promise with users and pagination info
+   * 
+   * Retrieves user list with optional filters for:
+   * - User type (doctor/patient)
+   * - Verification status
+   * - Account status (active/suspended)
+   * - Search term
+   * - Pagination (page, limit)
+   * 
+   * @param {UserFilters} filters - Optional filtering parameters
+   * @returns {Promise} Users array with pagination info
+   * @throws {Error} If fetch fails
    */
   async getUsers(filters: UserFilters = {}) {
     try {
@@ -126,7 +152,7 @@ class AdminService {
    * Get admin action logs
    * @param filters Optional filters for logs
    */
-  async getAdminLogs(filters: any = {}) {
+  async getAdminLogs(filters: Record<string, string | number | boolean | undefined> = {}) {
     try {
       const params = new URLSearchParams();
       
@@ -148,7 +174,7 @@ class AdminService {
    * Get authentication logs (login activities)
    * @param filters Optional filters for auth logs
    */
-  async getAuthLogs(filters: any = {}) {
+  async getAuthLogs(filters: Record<string, string | number | boolean | undefined> = {}) {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
@@ -169,7 +195,7 @@ class AdminService {
    * Get failed login attempts
    * @param filters Optional filters for failed attempts
    */
-  async getFailedLoginAttempts(filters: any = {}) {
+  async getFailedLoginAttempts(filters: Record<string, string | number | boolean | undefined> = {}) {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
@@ -190,7 +216,7 @@ class AdminService {
    * Get authentication statistics (system performance metrics)
    * @param filters Optional filters for stats
    */
-  async getAuthStats(filters: any = {}) {
+  async getAuthStats(filters: Record<string, string | number | boolean | undefined> = {}) {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {

@@ -1,23 +1,54 @@
 /**
- * axios.ts - Axios HTTP client configuration
+ * Axios HTTP Client Configuration
  * 
- * This module provides a pre-configured axios instance for making HTTP requests
- * to the backend API. It includes:
- * - Base URL configuration from environment variables
- * - Credentials (cookies) support for authentication
- * - Request/response interceptors for error handling
+ * Pre-configured axios instance for making HTTP requests to the backend API.
+ * Handles base URL configuration, credentials, and error interceptors.
  * 
- * Usage:
+ * Features:
+ * - Environment-based base URL configuration
+ * - Automatic credentials (cookies) inclusion
+ * - Default JSON content type header
+ * - Request interceptor for auth token injection
+ * - Response interceptor for global error handling
+ * - Automatic 401/403/500 error logging
+ * 
+ * Configuration:
+ * - Base URL: From VITE_BACKEND_URL env variable
+ * - With Credentials: Enabled for cookie-based auth
+ * - Content-Type: application/json by default
+ * 
+ * Error Handling:
+ * - 401: Unauthorized access (could redirect to login)
+ * - 403: Forbidden access
+ * - 500: Server errors
+ * 
+ * @module axios
+ * @example
  * import axios from './utils/axios';
- * const response = await axios.get('/endpoint');
+ * 
+ * // GET request
+ * const response = await axios.get('/users');
+ * 
+ * // POST request
+ * const data = await axios.post('/login', credentials);
  */
 
 import axios from 'axios';
 
-// Get backend URL from environment variables
+/**
+ * Get backend URL from environment variables
+ * Falls back to localhost:5000 if not defined
+ */
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-// Create axios instance with default configuration
+/**
+ * Create axios instance with default configuration
+ * 
+ * Configured with:
+ * - Base URL pointing to API endpoint
+ * - Credentials enabled for cookie transmission
+ * - JSON content type header
+ */
 const axiosInstance = axios.create({
   baseURL: `${BACKEND_URL}/api`,
   withCredentials: true, // Enable sending cookies with requests
@@ -26,10 +57,18 @@ const axiosInstance = axios.create({
   }
 });
 
-// Request interceptor - can add auth tokens, logging, etc.
+/**
+ * Request interceptor
+ * 
+ * Intercepts all outgoing requests to add authentication tokens,
+ * logging, or modify request configuration.
+ * 
+ * @param {AxiosRequestConfig} config - Request configuration
+ * @returns {AxiosRequestConfig} Modified configuration
+ */
 axiosInstance.interceptors.request.use(
   (config) => {
-    // You can modify request config here (e.g., add tokens)
+    // Add auth tokens or modify config here if needed
     return config;
   },
   (error) => {
@@ -37,7 +76,20 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor - handle common errors
+/**
+ * Response interceptor
+ * 
+ * Intercepts all responses to handle common errors globally.
+ * Logs specific error types and can trigger app-wide actions.
+ * 
+ * Error Codes Handled:
+ * - 401: Unauthorized - user not authenticated
+ * - 403: Forbidden - user lacks permissions
+ * - 500: Internal Server Error
+ * 
+ * @param {AxiosResponse} response - Successful response
+ * @returns {AxiosResponse} Response data
+ */
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;

@@ -12,7 +12,7 @@ const fixAdminAccount = async () => {
     // Update the existing admin to set isActive = true
     const result = await Admin.updateMany(
       { email: 'admin@healthconnect.com' },
-      { $set: { isActive: true } }
+      { $set: { isActive: true } },
     );
 
     console.log('\n✅ Admin account fixed!');

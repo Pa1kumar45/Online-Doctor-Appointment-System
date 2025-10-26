@@ -15,10 +15,10 @@ const updateAdminDetails = async () => {
 
     // Find the existing admin
     const existingAdmin = await Admin.findOne({ email: 'admin@healthconnect.com' });
-    
+
     if (!existingAdmin) {
       console.log('\n❌ Admin not found! Creating new admin...');
-      
+
       // Create new admin with updated details
       const newAdmin = await Admin.create({
         name: 'Adminppk',
@@ -32,8 +32,8 @@ const updateAdminDetails = async () => {
           'suspend_users',
           'view_analytics',
           'manage_admins',
-          'system_settings'
-        ]
+          'system_settings',
+        ],
       });
 
       console.log('\n✅ New admin created successfully!');
@@ -50,7 +50,7 @@ const updateAdminDetails = async () => {
       existingAdmin.email = 'Adminppk@gmail.com';
       existingAdmin.password = 'p12142005'; // Will be hashed by pre-save middleware
       existingAdmin.isActive = true;
-      
+
       await existingAdmin.save();
 
       console.log('\n✅ Admin details updated successfully!');

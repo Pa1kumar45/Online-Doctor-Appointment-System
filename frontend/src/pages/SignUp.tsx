@@ -1,3 +1,29 @@
+/**
+ * SignUp Component
+ * 
+ * User registration page with two-step verification process.
+ * Supports both patient and doctor registration with role-specific fields.
+ * 
+ * Features:
+ * - Role-based form fields (patient/doctor)
+ * - Email verification via OTP
+ * - Two-step registration flow
+ * - Conditional field rendering
+ * - Dark mode support
+ * 
+ * Registration Flow:
+ * 1. User fills registration form
+ * 2. Backend sends OTP to email
+ * 3. User verifies OTP
+ * 4. Account is activated and user is logged in
+ * 
+ * @component
+ * @example
+ * return (
+ *   <SignUp />
+ * )
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -25,7 +51,11 @@ const SignUp = () => {
 
   /**
    * Handle signup form submission
-   * Step 1: Register user and send OTP for email verification
+   * 
+   * Step 1: Register user and send OTP for email verification.
+   * Removes doctor-specific fields if user registers as patient.
+   * 
+   * @param {React.FormEvent} e - Form submission event
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +81,7 @@ const SignUp = () => {
       // Step 2: Show OTP modal for email verification
       setShowOTPModal(true);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration error:', err);
       setError(err.response?.data?.message || err.message || 'Registration failed');
     } finally {
@@ -61,7 +91,14 @@ const SignUp = () => {
 
   /**
    * Handle OTP verification
-   * Step 3: Verify OTP and complete signup
+   * 
+   * Step 2: Verify OTP and complete signup.
+   * Sets user in context and navigates based on role:
+   * - Doctors → profile page (to complete profile)
+   * - Patients → home page
+   * 
+   * @param {string} otp - 6-digit OTP code
+   * @throws {Error} Throws error if OTP verification fails
    */
   const handleVerifyOTP = async (otp: string) => {
     try {
@@ -88,7 +125,7 @@ const SignUp = () => {
       } else {
         navigate('/'); // Patients go to doctor list
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('OTP verification error:', error);
       throw error; // Let OTPVerification component handle the error display
     }
@@ -96,7 +133,11 @@ const SignUp = () => {
 
   /**
    * Handle OTP resend
-   * Resends OTP to user's email
+   * 
+   * Sends a new OTP to user's email when previous one expires
+   * or user didn't receive it.
+   * 
+   * @throws {Error} Throws error if OTP resend fails
    */
   const handleResendOTP = async () => {
     try {
@@ -106,12 +147,19 @@ const SignUp = () => {
         purpose: 'registration'
       });
       console.log('OTP resent successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Resend OTP error:', error);
       throw error; // Let OTPVerification component handle the error display
     }
   };
 
+  /**
+   * Handle form input changes
+   * 
+   * Updates form data state. Converts experience to number for numeric input.
+   * 
+   * @param {React.ChangeEvent} e - Input change event
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({

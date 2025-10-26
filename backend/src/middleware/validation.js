@@ -1,15 +1,15 @@
 /**
  * Express-Validator Validation Middleware
- * 
+ *
  * This module provides validation middleware chains for all authentication routes:
  * - User registration (with role-specific validation)
  * - User login
  * - Admin login
  * - Password reset request
  * - Password reset confirmation
- * 
+ *
  * Uses custom validators from validators.js for complex validation logic
- * 
+ *
  * @module validation
  * @requires express-validator
  * @requires validators
@@ -26,13 +26,13 @@ import {
   validateExperience,
   validateGender,
   validateSpecialization,
-  validateQualification
+  validateQualification,
 } from './validators.js';
 
 /**
  * Middleware to handle validation results
  * Checks if there are validation errors and returns formatted error response
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -40,22 +40,22 @@ import {
  */
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     // Format errors into a readable structure
-    const formattedErrors = errors.array().map(error => ({
+    const formattedErrors = errors.array().map((error) => ({
       field: error.path || error.param,
       message: error.msg,
-      value: error.value
+      value: error.value,
     }));
 
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
-      errors: formattedErrors
+      errors: formattedErrors,
     });
   }
-  
+
   next();
 };
 
@@ -141,7 +141,7 @@ export const validateRegister = [
     .custom(validateBloodGroup),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -171,7 +171,7 @@ export const validateLogin = [
     .withMessage('Role must be either "doctor" or "patient"'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -194,7 +194,7 @@ export const validateAdminLogin = [
     .withMessage('Password is required'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -219,7 +219,7 @@ export const validatePasswordResetRequest = [
     .withMessage('Role must be either "doctor", "patient", or "admin"'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -254,7 +254,7 @@ export const validatePasswordReset = [
     }),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -288,17 +288,17 @@ export const validateOTP = [
     .withMessage('Role must be either "doctor" or "patient"'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
  * Validation rules for resending OTP
- * 
+ *
  * Validates:
  * - Email: Required, valid format
  * - Role: Required, must be 'doctor' or 'patient'
  * - Purpose: Required, must be 'registration' or 'login'
- * 
+ *
  * @type {Array<ValidationChain>}
  */
 export const validateResendOTP = [
@@ -324,18 +324,18 @@ export const validateResendOTP = [
     .withMessage('Purpose must be either registration or login'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
  * Validation rules for OTP verification
- * 
+ *
  * Validates:
  * - Email: Required, valid format
  * - OTP: Required, 6 digits only
  * - Role: Required, must be 'doctor' or 'patient'
  * - Purpose: Required, must be 'registration' or 'login'
- * 
+ *
  * @type {Array<ValidationChain>}
  */
 export const validateVerifyOTP = [
@@ -369,7 +369,7 @@ export const validateVerifyOTP = [
     .withMessage('Purpose must be either registration or login'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -406,7 +406,7 @@ export const validateProfileUpdate = [
     .custom(validateBloodGroup),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -443,7 +443,7 @@ export const validateChangePassword = [
     }),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -465,7 +465,7 @@ export const validateForgotPassword = [
     .withMessage('Role must be either doctor, patient, or admin'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -498,5 +498,5 @@ export const validateResetPassword = [
     .withMessage('Role must be either doctor, patient, or admin'),
 
   // Handle validation errors
-  handleValidationErrors
+  handleValidationErrors,
 ];

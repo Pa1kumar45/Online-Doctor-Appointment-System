@@ -8,8 +8,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import axios from '../utils/axios';
-import { Doctor, Patient, SignUpFormData, LoginCredentials } from '../types/index';
-import { Admin } from '../types/admin';
+import { Doctor, Patient, Admin, SignUpFormData, LoginCredentials } from '../types/index';
 
 /**
  * Login information interface - timestamp data for login banner
@@ -31,19 +30,44 @@ interface ThemeContextType {
  * Main app context interface - extends theme context with auth functionality
  */
 interface AppContextType extends ThemeContextType {
-  currentUser: Doctor | Patient | Admin | null;                    // Currently authenticated user
-  setCurrentUser: (user: Doctor | Patient | Admin | null) => void; // Function to set current user
-  isLoading: boolean;                                       // Global loading state
-  error: string | null;                                     // Global error state
-  logout: () => void;                                       // Logout function
-  signup: (data: SignUpFormData) => void;                  // User registration function
-  login: (data: LoginCredentials) => void;                 // User login function
-  sendOTP: (data: { email: string; role: string; purpose: 'login' | 'registration' }) => Promise<void>; // Send OTP function
-  verifyOTP: (data: { email: string; otp: string; role: string; purpose: 'login' | 'registration' }) => Promise<any>; // Verify OTP function
-  getCurrentUser: () => Promise<{ data: { data: any; success: boolean; message: string } }>; // Get current user from server
-  loginInfo: LoginInfo | null;                             // Login timestamp information
-  showLoginInfoToast: (info: LoginInfo) => void;           // Show login info toast
-  hideLoginInfoToast: () => void;                          // Hide login info toast
+  // Currently authenticated user
+  currentUser: Doctor | Patient | Admin | null;
+
+  // Function to set current user
+  setCurrentUser: (user: Doctor | Patient | Admin | null) => void;
+
+  // Global loading state
+  isLoading: boolean;
+
+  // Global error state
+  error: string | null;
+
+  // Logout function
+  logout: () => void;
+
+  // User registration function
+  signup: (data: SignUpFormData) => void;
+
+  // User login function
+  login: (data: LoginCredentials) => void;
+
+  // Send OTP function
+  sendOTP: (data: { email: string; role: string; purpose: 'login' | 'registration' }) => Promise<void>;
+
+  // Verify OTP function
+  verifyOTP: (data: { email: string; otp: string; role: string; purpose: 'login' | 'registration' }) => Promise<{ success: boolean; message: string; requirePassword?: boolean }>;
+
+  // Get current user from server
+  getCurrentUser: () => Promise<{ data: { data: Doctor | Patient | Admin; success: boolean; message: string } }>;
+
+  // Login timestamp information
+  loginInfo: LoginInfo | null;
+
+  // Show login info toast
+  showLoginInfoToast: (info: LoginInfo) => void;
+
+  // Hide login info toast
+  hideLoginInfoToast: () => void;
 }
 
 // Create the app context
@@ -60,7 +84,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return savedTheme ? JSON.parse(savedTheme) : true;
     });
 
-    // Current authenticated user state (doctor or patient)
+    // Current authenticated user state (doctor, patient, or admin)
     const [currentUser, setCurrentUser] = useState<Doctor | Patient | Admin | null>(null);
     
     // Global loading and error states (currently unused but available for future use)
@@ -110,7 +134,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             // Set the authenticated user as current user
             setCurrentUser(response.data.data);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.log(error);
             throw error;
         }

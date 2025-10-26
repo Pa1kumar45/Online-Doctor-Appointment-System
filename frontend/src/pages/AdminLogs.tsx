@@ -1,3 +1,36 @@
+/**
+ * AdminLogs Component
+ * 
+ * System activity monitoring and authentication logs viewer for administrators.
+ * Displays comprehensive login activities and system events with search and filtering.
+ * 
+ * Features:
+ * - View authentication logs (login/logout events)
+ * - Search by user email or event type
+ * - Expandable log details
+ * - Pagination support
+ * - Success/failure status indicators
+ * - Timestamp formatting
+ * - IP address tracking
+ * - User agent information
+ * - System performance monitoring
+ * - Dark mode support
+ * 
+ * Log Information:
+ * - User identification (email, role)
+ * - Event type (login, logout, failed attempt)
+ * - Timestamp
+ * - IP address
+ * - Browser/device information
+ * - Success/failure status
+ * 
+ * @component
+ * @example
+ * return (
+ *   <AdminLogs />
+ * )
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -14,15 +47,10 @@ import {
 import adminService from '../services/admin.service';
 import { AuthLog } from '../types/admin';
 
-/**
- * Admin Logs Component
- * Displays login activities and system performance monitoring (SRS requirements)
- * With full dark theme support
- */
 const AdminLogs: React.FC = () => {
   const navigate = useNavigate();
   
-  // State management
+  // State management for logs and UI
   const [authLogs, setAuthLogs] = useState<AuthLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -39,7 +67,10 @@ const AdminLogs: React.FC = () => {
   }, [search, currentPage]);
 
   /**
-   * Fetch auth logs
+   * Fetch authentication logs
+   * 
+   * Retrieves paginated auth logs with optional search filtering.
+   * Updates logs list and pagination state.
    */
   const loadAuthLogs = async () => {
     setLoading(true);
@@ -61,7 +92,9 @@ const AdminLogs: React.FC = () => {
   };
 
   /**
-   * Handle page change
+   * Handle page change in pagination
+   * 
+   * @param {number} page - Page number to navigate to
    */
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -69,13 +102,22 @@ const AdminLogs: React.FC = () => {
 
   /**
    * Toggle expanded log details
+   * 
+   * Shows/hides detailed information for a specific log entry.
+   * 
+   * @param {string} logId - ID of the log to expand/collapse
    */
   const toggleLogExpansion = (logId: string) => {
     setExpandedLog(expandedLog === logId ? null : logId);
   };
 
   /**
-   * Format date and time
+   * Format date and time for display
+   * 
+   * Converts timestamp to readable locale string format.
+   * 
+   * @param {Date | string} date - Date to format
+   * @returns {string} Formatted date-time string
    */
   const formatDateTime = (date: Date | string) => {
     return new Date(date).toLocaleString('en-US', {
@@ -189,7 +231,7 @@ const AdminLogs: React.FC = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {authLogs.map((log: any) => {
+              {authLogs.map((log: AuthLog) => {
                 const isExpanded = expandedLog === log._id;
                 const isSuccess = 'success' in log ? log.success : false;
                 

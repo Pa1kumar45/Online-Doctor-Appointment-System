@@ -1,3 +1,25 @@
+/**
+ * DoctorList Component
+ * 
+ * Displays a searchable and filterable list of all available doctors.
+ * Allows patients to browse doctors and view their profiles.
+ * 
+ * Features:
+ * - Search by name or specialization
+ * - Filter by specialization
+ * - Filter by minimum experience
+ * - Responsive grid layout
+ * - Avatar fallback with color-coded initials
+ * - Dark mode support
+ * - Loading and error states
+ * 
+ * @component
+ * @example
+ * return (
+ *   <DoctorList />
+ * )
+ */
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
@@ -16,10 +38,17 @@ const DoctorList = () => {
   // const [minRating, setMinRating] = useState(0);
   const [minExperience, setMinExperience] = useState(0);
 
+  // Load doctors on component mount
   useEffect(() => {
     loadDoctors();
   }, []);
 
+  /**
+   * Load all doctors from the backend
+   * 
+   * Fetches complete list of registered doctors and updates state.
+   * Handles loading and error states.
+   */
   const loadDoctors = async () => {
     try {
       setLoading(true);
@@ -34,8 +63,19 @@ const DoctorList = () => {
     }
   };
 
+  // Extract unique specializations from all doctors for filter dropdown
   const specializations = [...new Set(doctors.map(doctor => doctor.specialization))];
 
+  /**
+   * Filter doctors based on search criteria
+   * 
+   * Applies multiple filters:
+   * - Text search: matches name or specialization (case-insensitive)
+   * - Specialization filter: exact match
+   * - Experience filter: minimum years required
+   * 
+   * @returns {Doctor[]} Filtered list of doctors
+   */
   const filteredDoctors = doctors.filter(doctor => {
     const matchesSearch = doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase());
@@ -47,6 +87,16 @@ const DoctorList = () => {
     return matchesSearch && matchesSpecialization && matchesExperience;
   });
 
+  /**
+   * Get doctor avatar or generate fallback
+   * 
+   * Returns doctor's avatar image if available, otherwise generates
+   * a colored circle with doctor's initial. Color is deterministic
+   * based on first letter of name.
+   * 
+   * @param {Doctor} doctor - Doctor object
+   * @returns {string | JSX.Element} Avatar URL or fallback component
+   */
   const getAvatarUrl = (doctor: Doctor) => {
     if (doctor.avatar) return doctor.avatar;
     

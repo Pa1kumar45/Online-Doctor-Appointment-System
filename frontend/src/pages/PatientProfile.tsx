@@ -1,3 +1,33 @@
+/**
+ * PatientProfile Component
+ * 
+ * Complete profile management page for patients.
+ * Allows patients to update their personal and medical information.
+ * 
+ * Features:
+ * - Edit personal information (name, email, contact)
+ * - Update medical details (DOB, gender, blood group, allergies)
+ * - Manage emergency contacts (add/remove multiple)
+ * - Upload/update profile avatar
+ * - Age auto-calculation from DOB
+ * - 18+ age validation
+ * - Change password
+ * - Form validation
+ * - Image preview
+ * - Dark mode support
+ * 
+ * Emergency Contacts:
+ * - Multiple emergency contacts support
+ * - Name, relationship, and phone number fields
+ * - Add/remove functionality
+ * 
+ * @component
+ * @example
+ * return (
+ *   <PatientProfile />
+ * )
+ */
+
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Calendar, Phone, Droplet, AlertCircle, Plus, Trash2, Image } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -6,6 +36,9 @@ import { Patient, EmergencyContact } from '../types/index.ts';
 import { apiService } from '../services/api.service';
 import { useApp } from '../context/AppContext';
 
+/**
+ * Form data interface for patient profile
+ */
 interface PatientFormData {
   name: string;
   email: string;
@@ -19,9 +52,46 @@ interface PatientFormData {
   emergencyContact: EmergencyContact[];
 }
 
+/**
+ * Calculate age from date of birth
+ * 
+ * Computes current age based on birth date,
+ * accounting for month and day differences.
+ * 
+ * @param {string} dateOfBirth - Date of birth in ISO format
+ * @returns {number} Calculated age in years
+ */
+const calculateAge = (dateOfBirth: string): number => {
+  if (!dateOfBirth) return 0;
+  
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
+
+/**
+ * Get minimum date for 18+ validation (18 years ago from today)
+ * 
+ * Calculates the maximum birth date that allows user to be 18 years old.
+ * Used for form validation to ensure adults-only registration.
+ * 
+ * @returns {string} Date string in YYYY-MM-DD format
+ */
+const getMinDateFor18Plus = (): string => {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - 18);
+  return date.toISOString().split('T')[0];
+};
+
 const PatientProfile = () => {
   const { currentUser, setCurrentUser } = useApp();
-  // console.log("currentUser from the context",currentUser)
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,30 +109,40 @@ const PatientProfile = () => {
     emergencyContact: []
   });
 
+  /**
+   * Fetch and initialize patient profile data
+   * 
+   * Loads current patient's profile and initializes form with existing data.
+   * Only accessible to users with 'patient' role.
+   */
   useEffect(() => {
     const fetchPatientProfile = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        if(currentUser?.role === 'doctor') {
+        // Only allow patients to access this page
+        if (currentUser?.role === 'doctor' || currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
           return;
         }
 
-        const initialFormData: PatientFormData = {
-          name: currentUser?.name || '',
-          email: currentUser?.email || '',
-          avatar: currentUser?.avatar || '',
-          dateOfBirth: currentUser?.dateOfBirth || '',
-          role: currentUser?.role || 'patient',
-          gender: currentUser?.gender || '',
-          bloodGroup: currentUser?.bloodGroup || '',
-          allergies: currentUser?.allergies || '',
-          contactNumber: currentUser?.contactNumber || '',
-          emergencyContact: currentUser?.emergencyContact || []
-        };
-        
-        setFormData(initialFormData);
+        if (currentUser?.role === 'patient') {
+          const patientUser = currentUser as Patient;
+          const initialFormData: PatientFormData = {
+            name: patientUser.name || '',
+            email: patientUser.email || '',
+            avatar: patientUser.avatar || '',
+            dateOfBirth: patientUser.dateOfBirth || '',
+            role: patientUser.role || 'patient',
+            gender: patientUser.gender || '',
+            bloodGroup: patientUser.bloodGroup || '',
+            allergies: patientUser.allergies || '',
+            contactNumber: patientUser.contactNumber || '',
+            emergencyContact: patientUser.emergencyContact || []
+          };
+          
+          setFormData(initialFormData);
+        }
       } catch (err) {
         console.error('Failed to load profile:', err);
         setError('Failed to load profile');
@@ -78,7 +158,7 @@ const PatientProfile = () => {
     if (!formData) return;
     
     const { name, value } = e.target;
-    
+
     // For contact number, only allow digits and limit to 10 characters
     if (name === 'contactNumber') {
       const digits = value.replace(/\D/g, '');
@@ -98,14 +178,14 @@ const PatientProfile = () => {
     if (!formData) return;
 
     const updatedContacts = [...formData.emergencyContact];
-    
+
     // For emergency contact phone, only allow digits and limit to 10 characters
     if (field === 'phone') {
       const digits = value.replace(/\D/g, '');
       if (digits.length <= 10) {
         updatedContacts[index] = { ...updatedContacts[index], [field]: digits };
       } else {
-        return; // Don't update if more than 10 digits
+        return;
       }
     } else {
       updatedContacts[index] = { ...updatedContacts[index], [field]: value };
@@ -141,13 +221,22 @@ const PatientProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData) return;
-    
+
+    // Validate date of birth and age
+    if (formData.dateOfBirth) {
+      const age = calculateAge(formData.dateOfBirth);
+      if (age < 18) {
+        setError('You must be at least 18 years old to use this platform');
+        return;
+      }
+    }
+
     // Validate contact number is exactly 10 digits
     if (formData.contactNumber && formData.contactNumber.length !== 10) {
       setError('Contact number must be exactly 10 digits');
       return;
     }
-    
+
     // Validate emergency contact phone numbers are exactly 10 digits
     for (let i = 0; i < formData.emergencyContact.length; i++) {
       const phone = formData.emergencyContact[i].phone;
@@ -171,10 +260,10 @@ const PatientProfile = () => {
 
       const UpdatedData = await apiService.updatePatientProfile(submitData as Patient);
       const updatedData=UpdatedData;
-      
+
       // Update both currentUser and formData with the complete data
       setCurrentUser(UpdatedData);
-      
+
       // Create a new form data object with all required fields
       const newFormData: PatientFormData = {
         name: updatedData.name || '',
@@ -186,7 +275,7 @@ const PatientProfile = () => {
         bloodGroup: updatedData.bloodGroup || '',
         allergies: updatedData.allergies || '',
         contactNumber: updatedData.contactNumber || '',
-        emergencyContact: formData.emergencyContact // Preserve the current emergency contacts
+        emergencyContact: formData.emergencyContact
       };
       
       setFormData(newFormData);
@@ -208,7 +297,6 @@ const PatientProfile = () => {
   }
 
   if (!currentUser && !formData) {
-    console.log("currentUser",currentUser)
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="p-4 text-center text-red-600 dark:text-red-400">
@@ -291,14 +379,25 @@ const PatientProfile = () => {
                 <div>
                   <label className="  text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                     <Calendar size={18} className="text-blue-500" /> Date of Birth
+                    {formData?.dateOfBirth && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        (Age: {calculateAge(formData.dateOfBirth)} years)
+                      </span>
+                    )}
                   </label>
                   <input
                     type="date"
                     name="dateOfBirth"
                     value={formData?.dateOfBirth}
                     onChange={handleChange}
+                    max={getMinDateFor18Plus()}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
                   />
+                  {formData?.dateOfBirth && calculateAge(formData.dateOfBirth) < 18 && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      You must be at least 18 years old
+                    </p>
+                  )}
                 </div>
 
                 <div>

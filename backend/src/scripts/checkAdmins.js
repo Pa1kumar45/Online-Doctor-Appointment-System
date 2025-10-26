@@ -5,8 +5,8 @@
  */
 
 import mongoose from 'mongoose';
-import Admin from '../models/Admin.js';
 import dotenv from 'dotenv';
+import Admin from '../models/Admin.js';
 
 dotenv.config();
 
@@ -17,9 +17,9 @@ const checkAdmins = async () => {
     console.log('✅ Connected to MongoDB\n');
 
     const admins = await Admin.find().select('-password');
-    
+
     console.log(`📊 Found ${admins.length} admin(s) in database:\n`);
-    
+
     if (admins.length === 0) {
       console.log('❌ No admin accounts found!');
       console.log('\n💡 You can create an admin using: node src/scripts/createTestAdmin.js');
@@ -33,7 +33,6 @@ const checkAdmins = async () => {
         console.log(`   Created: ${admin.createdAt}\n`);
       });
     }
-
   } catch (error) {
     console.error('❌ Error:', error.message);
   } finally {

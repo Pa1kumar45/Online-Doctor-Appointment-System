@@ -1,6 +1,6 @@
 /**
  * Custom Validation Utilities
- * 
+ *
  * This module provides custom validation functions for user input validation:
  * - Password strength validation (8+ chars, uppercase, lowercase, number, special character)
  * - Phone number format validation (10 digits)
@@ -8,7 +8,7 @@
  * - Email domain validation
  * - Blood group validation
  * - Date validation
- * 
+ *
  * @module validators
  */
 
@@ -19,7 +19,7 @@
  * - At least 1 lowercase letter
  * - At least 1 number
  * - At least 1 special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
- * 
+ *
  * @param {string} password - Password to validate
  * @returns {boolean} True if password meets all requirements
  * @throws {Error} Error message describing which requirement failed
@@ -45,7 +45,7 @@ export const validatePasswordStrength = (password) => {
     throw new Error('Password must contain at least one number');
   }
 
-  if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
+  if (!/[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(password)) {
     throw new Error('Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)');
   }
 
@@ -57,7 +57,7 @@ export const validatePasswordStrength = (password) => {
  * - Exactly 10 digits
  * - Only numeric characters
  * - Optional: Can start with country code +91 or 91
- * 
+ *
  * @param {string} phone - Phone number to validate
  * @returns {boolean} True if phone number is valid
  * @throws {Error} Error message if phone number is invalid
@@ -93,7 +93,7 @@ export const validatePhoneNumber = (phone) => {
  * - No numbers or special characters
  * - Minimum 2 characters
  * - Maximum 50 characters
- * 
+ *
  * @param {string} name - Name to validate
  * @returns {boolean} True if name format is valid
  * @throws {Error} Error message if name format is invalid
@@ -131,7 +131,7 @@ export const validateNameFormat = (name) => {
  * - Valid email format (username@domain.extension)
  * - No spaces or special characters except @ and .
  * - Proper domain structure
- * 
+ *
  * @param {string} email - Email to validate
  * @returns {boolean} True if email format is valid
  * @throws {Error} Error message if email format is invalid
@@ -145,7 +145,7 @@ export const validateEmailFormat = (email) => {
 
   // Basic email regex (more permissive than express-validator for custom domains)
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  
+
   if (!emailRegex.test(trimmedEmail)) {
     throw new Error('Please provide a valid email address');
   }
@@ -157,7 +157,7 @@ export const validateEmailFormat = (email) => {
 
   // Check for valid characters in local part (before @)
   const [localPart, domain] = trimmedEmail.split('@');
-  
+
   if (localPart.startsWith('.') || localPart.endsWith('.')) {
     throw new Error('Email address cannot start or end with a dot');
   }
@@ -172,7 +172,7 @@ export const validateEmailFormat = (email) => {
 /**
  * Validates blood group format:
  * - Must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-
- * 
+ *
  * @param {string} bloodGroup - Blood group to validate
  * @returns {boolean} True if blood group is valid
  * @throws {Error} Error message if blood group is invalid
@@ -183,7 +183,7 @@ export const validateBloodGroup = (bloodGroup) => {
   }
 
   const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-  
+
   if (!validBloodGroups.includes(bloodGroup.toUpperCase())) {
     throw new Error('Blood group must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-');
   }
@@ -196,7 +196,7 @@ export const validateBloodGroup = (bloodGroup) => {
  * - Must be a valid date
  * - Cannot be in the future
  * - Age must be between 0 and 150 years
- * 
+ *
  * @param {string|Date} dateOfBirth - Date of birth to validate
  * @returns {boolean} True if date of birth is valid
  * @throws {Error} Error message if date of birth is invalid
@@ -208,9 +208,9 @@ export const validateDateOfBirth = (dateOfBirth) => {
 
   const dob = new Date(dateOfBirth);
   const today = new Date();
-  
+
   // Check if date is valid
-  if (isNaN(dob.getTime())) {
+  if (Number.isNaN(dob.getTime())) {
     throw new Error('Invalid date of birth format');
   }
 
@@ -221,7 +221,7 @@ export const validateDateOfBirth = (dateOfBirth) => {
 
   // Calculate age
   const age = Math.floor((today - dob) / (365.25 * 24 * 60 * 60 * 1000));
-  
+
   if (age < 0 || age > 150) {
     throw new Error('Please provide a valid date of birth');
   }
@@ -233,7 +233,7 @@ export const validateDateOfBirth = (dateOfBirth) => {
  * Validates doctor's years of experience:
  * - Must be a number
  * - Must be between 0 and 60 years
- * 
+ *
  * @param {number} experience - Years of experience
  * @returns {boolean} True if experience is valid
  * @throws {Error} Error message if experience is invalid
@@ -244,8 +244,8 @@ export const validateExperience = (experience) => {
   }
 
   const exp = Number(experience);
-  
-  if (isNaN(exp)) {
+
+  if (Number.isNaN(exp)) {
     throw new Error('Experience must be a number');
   }
 
@@ -263,7 +263,7 @@ export const validateExperience = (experience) => {
 /**
  * Validates gender:
  * - Must be one of: male, female, other
- * 
+ *
  * @param {string} gender - Gender to validate
  * @returns {boolean} True if gender is valid
  * @throws {Error} Error message if gender is invalid
@@ -274,7 +274,7 @@ export const validateGender = (gender) => {
   }
 
   const validGenders = ['male', 'female', 'other'];
-  
+
   if (!validGenders.includes(gender.toLowerCase())) {
     throw new Error('Gender must be one of: male, female, other');
   }
@@ -286,7 +286,7 @@ export const validateGender = (gender) => {
  * Validates medical specialization:
  * - Must be a valid medical specialization
  * - Minimum 2 characters
- * 
+ *
  * @param {string} specialization - Specialization to validate
  * @returns {boolean} True if specialization is valid
  * @throws {Error} Error message if specialization is invalid
@@ -297,7 +297,7 @@ export const validateSpecialization = (specialization) => {
   }
 
   const trimmed = specialization.trim();
-  
+
   if (trimmed.length < 2) {
     throw new Error('Specialization must be at least 2 characters long');
   }
@@ -318,7 +318,7 @@ export const validateSpecialization = (specialization) => {
  * Validates qualification:
  * - Must be provided
  * - Minimum 2 characters
- * 
+ *
  * @param {string} qualification - Qualification to validate
  * @returns {boolean} True if qualification is valid
  * @throws {Error} Error message if qualification is invalid
@@ -329,7 +329,7 @@ export const validateQualification = (qualification) => {
   }
 
   const trimmed = qualification.trim();
-  
+
   if (trimmed.length < 2) {
     throw new Error('Qualification must be at least 2 characters long');
   }

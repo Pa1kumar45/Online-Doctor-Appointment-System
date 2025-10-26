@@ -1,6 +1,33 @@
+/**
+ * Homepage Component
+ * 
+ * Landing page for the Health Connect application.
+ * Displays project information, hero section, and feature highlights.
+ * 
+ * Features:
+ * - Course project information banner
+ * - Hero section with gradient background
+ * - Feature cards showcasing platform benefits
+ * - Responsive design with dark mode support
+ * - Animated hover effects on feature cards
+ * 
+ * Layout:
+ * - Project header with team member details
+ * - Hero section with main tagline
+ * - 4-column feature grid (responsive to mobile)
+ * 
+ * @component
+ * @example
+ * return (
+ *   <Homepage />
+ * )
+ */
 import React from 'react';
 import { Heart, Users, Clock, Shield } from 'lucide-react';
 
+/**
+ * Homepage Component Implementation
+ */
 const Homepage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">

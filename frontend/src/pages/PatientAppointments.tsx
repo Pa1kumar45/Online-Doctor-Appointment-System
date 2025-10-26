@@ -1,3 +1,31 @@
+/**
+ * PatientAppointments Component
+ * 
+ * Patient's appointment management dashboard.
+ * Displays all appointments with filtering and status information.
+ * 
+ * Features:
+ * - View all patient appointments
+ * - Filter by status (all/upcoming/ongoing/past)
+ * - Display doctor information for each appointment
+ * - Time-based appointment categorization
+ * - Appointment details (date, time, status, reason)
+ * - Loading and error states
+ * - Dark mode support
+ * 
+ * Filter Types:
+ * - all: Show all appointments
+ * - upcoming: Start time is in future
+ * - ongoing: Currently in progress (between start and end time)
+ * - past: End time has passed
+ * 
+ * @component
+ * @example
+ * return (
+ *   <PatientAppointments />
+ * )
+ */
+
 import  { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Calendar, Clock } from 'lucide-react';
@@ -15,6 +43,12 @@ const PatientAppointments = () => {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'|'ongoing'>('ongoing');
 
+  /**
+   * Load appointments and doctors data on component mount
+   * 
+   * Fetches both patient appointments and all doctors in parallel
+   * to display complete appointment information.
+   */
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -47,8 +81,15 @@ const PatientAppointments = () => {
     return <div className="flex justify-center items-center h-screen"><LoadingSpinner /></div>;
   }
 
-// const filteredAppointments= appointments;
-
+  /**
+   * Filter appointments based on selected filter
+   * 
+   * Filtering logic:
+   * - upcoming: Start time is in future
+   * - ongoing: Currently in progress (start <= now < end)
+   * - past: End time has passed
+   * - all: No filter applied
+   */
   const filteredAppointments = appointments.filter(appointment => {
     const appointmentStartStamp = new Date(`${appointment.date}T${appointment.startTime}`);
     const appointmentEndStamp = new Date(`${appointment.date}T${appointment.endTime}`);
@@ -64,8 +105,16 @@ const PatientAppointments = () => {
     return true;
   });
 
+  /**
+   * Get doctor information by ID
+   * 
+   * Helper function to find doctor details from the doctors array.
+   * 
+   * @param {string} doctorId - Doctor's unique identifier
+   * @returns {Doctor | undefined} Doctor object or undefined if not found
+   */
   const getDoctor = (doctorId: string) => {
-  console.log("doctors hit",doctorId);
+    console.log("doctors hit",doctorId);
     return doctors.find(d => d._id === doctorId);
   };
 
@@ -131,9 +180,13 @@ const PatientAppointments = () => {
             No appointments found
           </div>
         ) : (
-          filteredAppointments.map((appointment:any) => {
+          filteredAppointments.map((appointment: Appointment) => {
             console.log("appointment",appointment);
-            const doctor = getDoctor(appointment.doctorId._id);
+            // Handle both populated and non-populated doctorId
+            const doctorId = typeof appointment.doctorId === 'string' 
+              ? appointment.doctorId 
+              : appointment.doctorId._id;
+            const doctor = getDoctor(doctorId);
           
             return (
               <div
@@ -142,7 +195,7 @@ const PatientAppointments = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    {doctor.avatar && (
+                    {doctor?.avatar && (
                       <img
                         src={doctor.avatar}
                         alt={doctor.name}

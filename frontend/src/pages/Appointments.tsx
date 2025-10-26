@@ -1,22 +1,56 @@
+/**
+ * Appointments Component
+ * 
+ * Comprehensive appointment management page for patients.
+ * Organizes appointments into pending, upcoming, and past categories.
+ * 
+ * Features:
+ * - Three-column layout (pending/upcoming/past)
+ * - Automatic appointment categorization
+ * - Real-time status updates
+ * - Appointment details display
+ * - Empty state handling
+ * - Color-coded status badges
+ * - Dark mode support
+ * 
+ * Categorization Logic:
+ * - Pending: Status is 'pending' (awaiting doctor approval)
+ * - Upcoming: Start time > now AND status is 'scheduled'
+ * - Past: End time <= now OR status is 'completed'/'cancelled'
+ * 
+ * @component
+ * @example
+ * return (
+ *   <Appointments />
+ * )
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, User, AlertCircle } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Appointment } from '../types/types';
 import { appointmentService } from '../services/appointment.service';
-import { useApp } from '../context/AppContext';
 
-const Appointments = () => {
-    const { currentUser } = useApp();
+const Appointments: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([]);
     const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
     const [pastAppointments, setPastAppointments] = useState<Appointment[]>([]);
 
+    // Fetch appointments on component mount
     useEffect(() => {
         fetchAppointments();
     }, []);
 
+    /**
+     * Fetch and categorize all patient appointments
+     * 
+     * Retrieves appointments and categorizes them into:
+     * - Pending: Awaiting approval
+     * - Upcoming: Scheduled for future
+     * - Past: Already occurred or cancelled
+     */
     const fetchAppointments = async () => {
         try {
             setIsLoading(true);
@@ -33,7 +67,7 @@ const Appointments = () => {
                 const appointmentDate = new Date(`${app.date}T${app.endTime}`);
                 return appointmentDate <= now || app.status === 'completed' || app.status === 'cancelled';
             }));
-        } catch (err) {
+        } catch {
             setError('Failed to fetch appointments');
         } finally {
             setIsLoading(false);

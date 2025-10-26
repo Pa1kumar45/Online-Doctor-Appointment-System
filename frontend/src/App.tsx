@@ -1,3 +1,26 @@
+/**
+ * App Component
+ * 
+ * Root application component that sets up routing and authentication.
+ * Handles route protection, user session management, and role-based navigation.
+ * 
+ * Features:
+ * - Role-based routing (Patient, Doctor, Admin, Super Admin)
+ * - Protected routes for authenticated users
+ * - Admin-only route protection
+ * - Automatic user session restoration
+ * - Login information banner display
+ * - Redirect logic based on user roles
+ * 
+ * Route Structure:
+ * - Public: Home, Login, Signup, Forgot Password
+ * - Patient: Doctor List, Appointments, Profile
+ * - Doctor: Dashboard, Appointments, Profile
+ * - Admin: Dashboard, User Management, Logs, Profile
+ * 
+ * @component
+ * @returns {React.FC} Root application component with routing
+ */
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from './context/AppContext';
@@ -12,50 +35,76 @@ import ForgotPassword from './pages/ForgotPassword';
 import DoctorDashboard from './pages/DoctorDashboard';
 import DoctorProfile from './pages/DoctorProfile';
 import PatientProfile from './pages/PatientProfile';
+import AdminProfile from './pages/AdminProfile';
 import DoctorPage from './pages/DoctorPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogs from './pages/AdminLogs';
 import Appointments from './pages/Appointments';
-// import { isAdmin } from './utils/auth';
+import { Doctor, Patient, Admin } from './types';
 
+/**
+ * Response type for getCurrentUser API call
+ */
 interface GetCurrentUserResponse {
   data: {
-    data: any; // Replace with proper user type if available
+    data: Doctor | Patient | Admin;
     success: boolean;
     message: string;
   }
 }
 
 /**
- * Protected Admin Route Component
- * Ensures only admin users can access admin pages
+ * AdminRoute Component
+ * 
+ * Higher-order component that protects admin-only routes.
+ * Redirects unauthorized users to appropriate pages.
+ * 
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components to render if authorized
+ * @returns {React.ReactElement} Protected route or redirect
  */
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useApp();
   const location = useLocation();
 
-  // If no user, send to login and preserve intended path
+  // Redirect to login if not authenticated, preserving intended destination
   if (!currentUser) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Only allow admin/super_admin roles
+  // Redirect to home if user is not an admin or super admin
   if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') {
     return <Navigate to="/" replace />;
   }
 
+  // Render protected content for authorized admin users
   return <>{children}</>;
 };
 
+/**
+ * App Component Implementation
+ */
 const App: React.FC = () => {
+  // Get app context values
   const { currentUser, setCurrentUser, getCurrentUser, loginInfo, hideLoginInfoToast } = useApp();
+
+  // Ref to prevent duplicate user fetching on mount
   const hasFetchedUser = useRef(false);
 
+  /**
+   * Effect hook to restore user session on app mount
+   * Fetches current user from server if valid session exists
+   * Uses ref to ensure it only runs once
+   */
   useEffect(() => {
-    // Ensure this only runs once on mount
+    // Ensure this only runs once on mount to avoid duplicate requests
     if (!hasFetchedUser.current) {
       hasFetchedUser.current = true;
       
+      /**
+       * Fetch current user from server
+       * Restores user session if valid JWT token exists
+       */
       const fetchCurrentUser = async () => {
         try {
           const response = await getCurrentUser() as GetCurrentUserResponse;
@@ -107,7 +156,9 @@ const App: React.FC = () => {
               <Route
                 path="/profile"
                 element={
-                  currentUser?.role === 'doctor' ? <DoctorProfile /> : <PatientProfile />
+                  currentUser?.role === 'doctor' ? <DoctorProfile /> : 
+                  (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') ? <AdminProfile /> :
+                  <PatientProfile />
                 }
               />
               {currentUser.role === 'patient' && (

@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Shield, AlertCircle } from 'lucide-react';
+import { getErrorMessage } from '../utils/auth';
 import { authService } from '../services/auth.service';
 
 interface AdminLoginFormData {
@@ -62,13 +63,9 @@ const AdminLogin: React.FC = () => {
       // Redirect to admin dashboard
       navigate('/admin');
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Admin login error:', err);
-      setError(
-        err.response?.data?.message || 
-        err.message || 
-        'Invalid admin credentials'
-      );
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

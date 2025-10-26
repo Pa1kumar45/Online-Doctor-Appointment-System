@@ -5,58 +5,58 @@ const sessionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     refPath: 'userType',
     required: true,
-    index: true
+    index: true,
   },
   userType: {
     type: String,
     required: true,
-    enum: ['Doctor', 'Patient', 'Admin']
+    enum: ['Doctor', 'Patient', 'Admin'],
   },
   token: {
     type: String,
     required: true,
     unique: true,
-    index: true
+    index: true,
   },
   deviceInfo: {
     browser: {
       type: String,
-      default: 'Unknown'
+      default: 'Unknown',
     },
     os: {
       type: String,
-      default: 'Unknown'
+      default: 'Unknown',
     },
     device: {
       type: String,
-      default: 'Unknown'
-    }
+      default: 'Unknown',
+    },
   },
   ipAddress: {
     type: String,
-    required: true
+    required: true,
   },
   lastActivity: {
     type: Date,
     default: Date.now,
-    index: true
+    index: true,
   },
   expiresAt: {
     type: Date,
     required: true,
-    index: true
+    index: true,
   },
   isActive: {
     type: Boolean,
     default: true,
-    index: true
+    index: true,
   },
   revokedReason: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 }, {
-  timestamps: true
+  timestamps: true,
 });
 
 // Compound index for efficient user session queries
@@ -68,7 +68,7 @@ sessionSchema.index({ expiresAt: 1, isActive: 1 });
 /**
  * Static method to create a new session
  */
-sessionSchema.statics.createSession = async function(sessionData) {
+sessionSchema.statics.createSession = async function (sessionData) {
   try {
     const session = new this(sessionData);
     await session.save();
@@ -82,16 +82,16 @@ sessionSchema.statics.createSession = async function(sessionData) {
 /**
  * Static method to get user's active sessions
  */
-sessionSchema.statics.getUserSessions = async function(userId, userType) {
+sessionSchema.statics.getUserSessions = async function (userId, userType) {
   try {
     const sessions = await this.find({
       userId,
       userType,
       isActive: true,
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     })
-    .sort({ lastActivity: -1 })
-    .lean();
+      .sort({ lastActivity: -1 })
+      .lean();
 
     return sessions;
   } catch (error) {
@@ -103,12 +103,12 @@ sessionSchema.statics.getUserSessions = async function(userId, userType) {
 /**
  * Static method to find session by token
  */
-sessionSchema.statics.findByToken = async function(token) {
+sessionSchema.statics.findByToken = async function (token) {
   try {
     return await this.findOne({
       token,
       isActive: true,
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     });
   } catch (error) {
     console.error('Error finding session by token:', error);
@@ -119,12 +119,12 @@ sessionSchema.statics.findByToken = async function(token) {
 /**
  * Static method to update session activity
  */
-sessionSchema.statics.updateActivity = async function(token) {
+sessionSchema.statics.updateActivity = async function (token) {
   try {
     await this.findOneAndUpdate(
       { token, isActive: true },
       { lastActivity: new Date() },
-      { new: true }
+      { new: true },
     );
   } catch (error) {
     console.error('Error updating session activity:', error);
@@ -134,12 +134,12 @@ sessionSchema.statics.updateActivity = async function(token) {
 /**
  * Static method to revoke a specific session
  */
-sessionSchema.statics.revokeSession = async function(sessionId, userId) {
+sessionSchema.statics.revokeSession = async function (sessionId, userId) {
   try {
     const result = await this.findOneAndUpdate(
       { _id: sessionId, userId, isActive: true },
       { isActive: false },
-      { new: true }
+      { new: true },
     );
     return result;
   } catch (error) {
@@ -151,22 +151,22 @@ sessionSchema.statics.revokeSession = async function(sessionId, userId) {
 /**
  * Static method to revoke all user sessions except current
  */
-sessionSchema.statics.revokeAllSessions = async function(userId, exceptToken = null) {
+sessionSchema.statics.revokeAllSessions = async function (userId, exceptToken = null) {
   try {
     const query = {
       userId,
-      isActive: true
+      isActive: true,
     };
-    
+
     if (exceptToken) {
       query.token = { $ne: exceptToken };
     }
 
     const result = await this.updateMany(
       query,
-      { isActive: false }
+      { isActive: false },
     );
-    
+
     return result;
   } catch (error) {
     console.error('Error revoking all sessions:', error);
@@ -178,19 +178,19 @@ sessionSchema.statics.revokeAllSessions = async function(userId, exceptToken = n
  * Static method to enforce single device login
  * Revokes ALL existing sessions for a user when they log in from a new device
  * Used for FR-1.4 Single Device Login Enforcement
- * 
+ *
  * @param {ObjectId} userId - User's ID
  * @param {String} userType - User type ('Doctor', 'Patient', 'Admin')
  * @returns {Object} Result with count of revoked sessions
  */
-sessionSchema.statics.enforceSingleDevice = async function(userId, userType) {
+sessionSchema.statics.enforceSingleDevice = async function (userId, userType) {
   try {
     // Get count of active sessions before revoking
     const activeSessionsCount = await this.countDocuments({
       userId,
       userType,
       isActive: true,
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     });
 
     // Revoke all active sessions for this user
@@ -198,19 +198,19 @@ sessionSchema.statics.enforceSingleDevice = async function(userId, userType) {
       {
         userId,
         userType,
-        isActive: true
+        isActive: true,
       },
-      { 
+      {
         isActive: false,
-        revokedReason: 'New device login - single device enforcement'
-      }
+        revokedReason: 'New device login - single device enforcement',
+      },
     );
-    
+
     console.log(`✓ Single device enforcement: Revoked ${activeSessionsCount} session(s) for user ${userId}`);
-    
+
     return {
       revokedCount: result.modifiedCount,
-      previousDeviceLoggedOut: activeSessionsCount > 0
+      previousDeviceLoggedOut: activeSessionsCount > 0,
     };
   } catch (error) {
     console.error('Error enforcing single device login:', error);
@@ -221,16 +221,16 @@ sessionSchema.statics.enforceSingleDevice = async function(userId, userType) {
 /**
  * Static method to clean up expired sessions
  */
-sessionSchema.statics.cleanupExpired = async function() {
+sessionSchema.statics.cleanupExpired = async function () {
   try {
     const result = await this.updateMany(
       {
         expiresAt: { $lt: new Date() },
-        isActive: true
+        isActive: true,
       },
-      { isActive: false }
+      { isActive: false },
     );
-    
+
     console.log(`✓ Cleaned up ${result.modifiedCount} expired sessions`);
     return result;
   } catch (error) {
@@ -242,14 +242,14 @@ sessionSchema.statics.cleanupExpired = async function() {
 /**
  * Static method to delete old inactive sessions (for database maintenance)
  */
-sessionSchema.statics.deleteOldSessions = async function(daysOld = 30) {
+sessionSchema.statics.deleteOldSessions = async function (daysOld = 30) {
   try {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
     const result = await this.deleteMany({
       isActive: false,
-      updatedAt: { $lt: cutoffDate }
+      updatedAt: { $lt: cutoffDate },
     });
 
     console.log(`✓ Deleted ${result.deletedCount} old inactive sessions`);
@@ -263,14 +263,14 @@ sessionSchema.statics.deleteOldSessions = async function(daysOld = 30) {
 /**
  * Instance method to check if session is valid
  */
-sessionSchema.methods.isValid = function() {
+sessionSchema.methods.isValid = function () {
   return this.isActive && this.expiresAt > new Date();
 };
 
 /**
  * Instance method to get session duration
  */
-sessionSchema.methods.getDuration = function() {
+sessionSchema.methods.getDuration = function () {
   const now = new Date();
   const created = this.createdAt;
   const durationMs = now - created;
@@ -279,12 +279,11 @@ sessionSchema.methods.getDuration = function() {
 
   if (durationDays > 0) {
     return `${durationDays} day${durationDays > 1 ? 's' : ''} ago`;
-  } else if (durationHours > 0) {
+  } if (durationHours > 0) {
     return `${durationHours} hour${durationHours > 1 ? 's' : ''} ago`;
-  } else {
-    const durationMinutes = Math.floor(durationMs / (1000 * 60));
-    return `${durationMinutes} minute${durationMinutes > 1 ? 's' : ''} ago`;
   }
+  const durationMinutes = Math.floor(durationMs / (1000 * 60));
+  return `${durationMinutes} minute${durationMinutes > 1 ? 's' : ''} ago`;
 };
 
 const Session = mongoose.model('Session', sessionSchema);

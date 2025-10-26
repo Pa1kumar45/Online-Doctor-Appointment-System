@@ -1,24 +1,67 @@
+/**
+ * ChangePasswordForm Component
+ * 
+ * A secure password change form component that allows users to update their password.
+ * Includes validation, visibility toggles, and user feedback.
+ * 
+ * Features:
+ * - Current password verification
+ * - New password validation (minimum 6 characters)
+ * - Password confirmation matching
+ * - Show/hide password toggles for all fields
+ * - Real-time validation feedback
+ * - Success/error notifications
+ * - Security tips display
+ * 
+ * @component
+ * @param {ChangePasswordFormProps} props - Component props
+ * @param {Function} [props.onSuccess] - Optional callback function called after successful password change
+ * 
+ * @example
+ * return (
+ *   <ChangePasswordForm onSuccess={() => console.log('Password changed!')} />
+ * )
+ */
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
+import { getErrorMessage } from '../utils/auth';
 
+/**
+ * Props interface for ChangePasswordForm component
+ */
 interface ChangePasswordFormProps {
+  // Optional callback function triggered on successful password change
   onSuccess?: () => void;
 }
 
+/**
+ * ChangePasswordForm Component Implementation
+ */
 const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) => {
+  // Form state management - stores all password fields
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Password visibility toggles for each field
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Loading and feedback states
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  /**
+   * Handle input field changes
+   * Updates form data and clears any existing error/success messages
+   * 
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Change event from input field
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -29,6 +72,19 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
     setSuccess(null);
   };
 
+  /**
+   * Validate password change form
+   * Checks all validation rules before submission
+   * 
+   * Validation Rules:
+   * 1. Current password is required
+   * 2. New password is required
+   * 3. New password must be at least 6 characters
+   * 4. New password must differ from current password
+   * 5. New password and confirmation must match
+   * 
+   * @returns {boolean} True if form is valid, false otherwise
+   */
   const validateForm = () => {
     if (!formData.currentPassword) {
       setError('Please enter your current password');
@@ -53,6 +109,12 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
     return true;
   };
 
+  /**
+   * Handle form submission
+   * Validates form, calls API, and handles success/error states
+   * 
+   * @param {React.FormEvent} e - Form submit event
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -87,9 +149,9 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
         }, 2000);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Change password error:', err);
-      setError(err.message || 'Failed to change password');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

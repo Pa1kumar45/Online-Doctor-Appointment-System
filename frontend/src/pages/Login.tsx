@@ -1,3 +1,31 @@
+/**
+ * Login Component
+ * 
+ * User authentication page with OTP verification for doctors and patients.
+ * Implements a two-step login process: credentials submission and OTP verification.
+ * 
+ * Features:
+ * - Email and password authentication
+ * - Role selection (Doctor/Patient)
+ * - OTP verification via email
+ * - Account suspension detection and display
+ * - Form validation
+ * - Error handling and user feedback
+ * - Session management integration
+ * - Login info banner display
+ * 
+ * Authentication Flow:
+ * 1. User enters credentials (email, password, role)
+ * 2. Backend validates and sends OTP to email
+ * 3. User enters OTP for verification
+ * 4. On success, user is logged in and redirected
+ * 
+ * @component
+ * @example
+ * return (
+ *   <Login />
+ * )
+ */
 import React, { useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -6,20 +34,32 @@ import OTPVerification from '../components/OTPVerification';
 import { AlertTriangle, X } from 'lucide-react';
 import { authService } from '../services/auth.service';
 
+/**
+ * Login form data structure
+ */
 interface LoginFormData {
   email: string;
   password: string;
   role: 'doctor' | 'patient';
 }
 
+/**
+ * Account suspension information structure
+ */
 interface SuspensionInfo {
   reason: string;
   suspendedAt?: string;
 }
 
+/**
+ * Login Component Implementation
+ */
 const Login = () => {
+  // Navigation and context hooks
   const navigate = useNavigate();
   const { setCurrentUser, showLoginInfoToast } = useApp();
+
+  // Component state management
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suspensionInfo, setSuspensionInfo] = useState<SuspensionInfo | null>(null);
@@ -32,7 +72,14 @@ const Login = () => {
 
   /**
    * Handle initial login form submission
-   * Step 1: Send credentials to backend, which will send OTP to email
+   * 
+   * First step of authentication process:
+   * - Validates credentials on backend
+   * - Sends OTP to user's email
+   * - Opens OTP verification modal
+   * - Handles account suspension errors
+   * 
+   * @param {React.FormEvent} e - Form submission event
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,22 +90,23 @@ const Login = () => {
       
       console.log('Login attempt:', formData);
        
-      // Step 1: Initiate login - backend will send OTP
+      // Send credentials to backend - OTP will be sent to email
       await authService.login(formData);
       
-      // Step 2: Show OTP modal for verification
+      // Show OTP verification modal
       setShowOTPModal(true);
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
       
-      // Check if account is suspended
+      // Handle suspended account
       if (err.response?.data?.suspended) {
         setSuspensionInfo({
           reason: err.response.data.suspensionReason,
           suspendedAt: err.response.data.suspendedAt
         });
       } else {
+        // Handle general authentication errors
         setError(err.response?.data?.message || err.message || 'Invalid credentials');
       }
     } finally {
@@ -68,7 +116,14 @@ const Login = () => {
 
   /**
    * Handle OTP verification
-   * Step 3: Verify OTP and complete login
+   * 
+   * Second step of authentication process:
+   * - Verifies OTP entered by user
+   * - Completes login on success
+   * - Sets user in context and redirects
+   * 
+   * @param {string} otp - 6-digit OTP entered by user
+   * @throws {Error} If OTP verification fails
    */
   const handleVerifyOTP = async (otp: string) => {
     try {
@@ -107,7 +162,7 @@ const Login = () => {
       } else {
         navigate('/');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('OTP verification error:', error);
       throw error; // Let OTPVerification component handle the error display
     }
@@ -125,7 +180,7 @@ const Login = () => {
         purpose: 'login'
       });
       console.log('OTP resent successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Resend OTP error:', error);
       throw error; // Let OTPVerification component handle the error display
     }

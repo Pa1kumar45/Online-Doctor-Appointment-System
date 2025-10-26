@@ -1,29 +1,77 @@
+/**
+ * Navbar Component
+ * 
+ * Main navigation bar component that provides role-based navigation throughout the application.
+ * Supports both desktop and mobile responsive layouts with a hamburger menu.
+ * 
+ * Features:
+ * - Role-based navigation (Patient, Doctor, Admin, Super Admin)
+ * - Active route highlighting
+ * - Dark mode support
+ * - Mobile responsive with hamburger menu
+ * - Logout functionality
+ * - Conditional rendering based on authentication status
+ * 
+ * Navigation Structure:
+ * - Patient: Home, Doctors, Appointments, Profile
+ * - Doctor: Dashboard, Appointments, Profile
+ * - Admin/Super Admin: Dashboard, User Management, Logs, Profile
+ * 
+ * @component
+ * @example
+ * return (
+ *   <Navbar />
+ * )
+ */
 import  { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useApp} from '../context/AppContext';
 
-
+/**
+ * Navbar Component Implementation
+ */
 const Navbar = () => {
+  // Mobile menu toggle state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Get current user and logout function from context
   const { currentUser,logout } = useApp();
+
+  // Get current location for active link highlighting
   const location = useLocation();
 
+  /**
+   * Handle user logout
+   * Calls logout function from context which clears user data and redirects
+   */
   const handleLogout = () => {
     logout();
-    
   };
 
+  /**
+   * Toggle mobile menu visibility
+   */
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  /**
+   * Debug logging for current user
+   * Helps track authentication state changes
+   */
   useEffect(() => {
     console.log("navbar effect - currentUser:", currentUser);
     console.log("navbar effect - currentUser.role:", currentUser?.role);
   }, [currentUser])
   
-  // Helper function to determine if a link is active
+  /**
+   * Helper function to determine if a navigation link is active
+   * Handles special cases for home and admin routes
+   * 
+   * @param {string} path - The path to check
+   * @returns {boolean} True if the path matches current location
+   */
   const isActive = (path: string) => {
     if (path === '/') {
       return location.pathname === '/';
@@ -34,7 +82,13 @@ const Navbar = () => {
     return location.pathname === path;
   };
 
-  // Get active and inactive styles
+  /**
+   * Get CSS classes for navigation links based on active state
+   * Returns appropriate classes for active and inactive states
+   * 
+   * @param {string} path - The path to get classes for
+   * @returns {string} Combined CSS classes for the link
+   */
   const getLinkClasses = (path: string) => {
     const baseClasses = "px-3 py-2 rounded-md text-sm font-medium transition-colors";
     const activeClasses = "bg-blue-600 text-white dark:bg-blue-500";

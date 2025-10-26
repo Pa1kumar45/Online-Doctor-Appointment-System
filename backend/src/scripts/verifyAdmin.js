@@ -6,8 +6,8 @@
 
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import Admin from '../models/Admin.js';
 import dotenv from 'dotenv';
+import Admin from '../models/Admin.js';
 
 dotenv.config();
 
@@ -22,7 +22,7 @@ const verifyAdmin = async () => {
 
     // Find admin with password field
     const admin = await Admin.findOne({ email }).select('+password');
-    
+
     if (!admin) {
       console.log(`❌ Admin with email "${email}" not found!`);
       process.exit(1);
@@ -57,7 +57,6 @@ const verifyAdmin = async () => {
       console.log('❌ Password verification failed!');
       console.log('💡 Run quickResetAdmin.js again to reset the password.');
     }
-
   } catch (error) {
     console.error('\n❌ Error:', error.message);
     console.error(error.stack);

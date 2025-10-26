@@ -1,9 +1,9 @@
 /**
  * index.js - Main server entry point for Health-Connect backend
- * 
+ *
  * This is the primary server file that initializes and configures the Health-Connect
  * MERN stack application backend. It sets up:
- * 
+ *
  * Core Features:
  * - Express.js web server with RESTful API endpoints
  * - MongoDB database connection with Mongoose ODM
@@ -11,20 +11,20 @@
  * - CORS configuration for cross-origin requests
  * - Cookie-based authentication middleware
  * - Comprehensive error handling
- * 
+ *
  * Architecture:
  * - RESTful API design with modular route organization
  * - Real-time WebSocket communication via Socket.io
  * - JWT authentication with HTTP-only cookies
  * - Centralized error handling middleware
  * - Environment-based configuration
- * 
+ *
  * Security Features:
  * - CORS protection with specific origin whitelist
  * - Cookie parser for secure session management
  * - Request validation and sanitization
  * - Error stack hiding in production
- * 
+ *
  * Dependencies:
  * - Express.js: Web framework
  * - Mongoose: MongoDB ODM
@@ -34,19 +34,19 @@
  * - Dotenv: Environment variable management
  */
 
-import express from 'express';// Core Express framework for web server
-import mongoose from 'mongoose';// MongoDB object modeling and connection
-import cors from 'cors';// Cross-Origin Resource Sharing middleware
-import dotenv from 'dotenv';// Environment variable loader
-import cookieParser from 'cookie-parser';// Cookie parsing middleware for authentication
-import http from 'http';// HTTP server module
+import express from 'express'; // Core Express framework for web server
+import mongoose from 'mongoose'; // MongoDB object modeling and connection
+import cors from 'cors'; // Cross-Origin Resource Sharing middleware
+import dotenv from 'dotenv'; // Environment variable loader
+import cookieParser from 'cookie-parser'; // Cookie parsing middleware for authentication
+import http from 'http'; // HTTP server module
 
 // API route modules
-import authRoutes from './routes/auth.js';                // Authentication endpoints
-import doctorRoutes from './routes/doctors.js';          // Doctor management endpoints
-import patientRoutes from './routes/patients.js';        // Patient management endpoints
+import authRoutes from './routes/auth.js'; // Authentication endpoints
+import doctorRoutes from './routes/doctors.js'; // Doctor management endpoints
+import patientRoutes from './routes/patients.js'; // Patient management endpoints
 import appointmentRoutes from './routes/appointments.js'; // Appointment booking endpoints
-import adminRoutes from './routes/admin.js';             // Admin management endpoints
+import adminRoutes from './routes/admin.js'; // Admin management endpoints
 
 // Utilities
 import { startSessionCleanup } from './lib/sessionCleanup.js'; // Session cleanup scheduler
@@ -57,24 +57,23 @@ const server = http.createServer(app);
 dotenv.config();
 const PORT = process.env.PORT || 5000;
 
-
 /**
  * Middleware Configuration
- * 
+ *
  * Sets up essential middleware for request processing, security, and functionality.
  * Order is important - middleware executes in the sequence defined below.
  */
 
 /**
  * CORS (Cross-Origin Resource Sharing) Configuration
- * 
+ *
  * Enables controlled access from frontend application running on different origin.
  * Security features:
  * - Restricts access to specified frontend URL only
  * - Enables credentials (cookies) for authentication
  * - Allows specific HTTP methods for API operations
  * - Defines allowed headers for request validation
- * 
+ *
  * Configuration:
  * - origin: Frontend URL from environment variable
  * - credentials: true (enables cookie-based authentication)
@@ -82,11 +81,11 @@ const PORT = process.env.PORT || 5000;
  * - allowedHeaders: Standard headers plus custom authentication
  */
 app.use(cors({
-  origin: process.env.FRONTEND_URL,    // Restrict to frontend URL only
-  credentials: true,                   // Enable cookie transmission
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-requested-with"],
-  optionsSuccessStatus: 200           // Support legacy browsers
+  origin: process.env.FRONTEND_URL, // Restrict to frontend URL only
+  credentials: true, // Enable cookie transmission
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
+  optionsSuccessStatus: 200, // Support legacy browsers
 }));
 
 // Enable preflight OPTIONS requests for all routes
@@ -94,7 +93,7 @@ app.options('*', cors());
 
 /**
  * Body Parsing Middleware
- * 
+ *
  * express.json(): Parses incoming JSON payloads in request body
  * - Enables automatic JSON parsing for API requests
  * - Sets request size limits for security
@@ -104,7 +103,7 @@ app.use(express.json());
 
 /**
  * Cookie Parser Middleware
- * 
+ *
  * Parses cookies from incoming requests for authentication.
  * - Enables reading HTTP-only cookies
  * - Supports signed cookies for security
@@ -114,30 +113,26 @@ app.use(cookieParser());
 
 /**
  * MongoDB Database Connection
- * 
+ *
  * Establishes connection to MongoDB database using Mongoose ODM.
- * 
+ *
  * Connection Features:
  * - Uses environment variable for connection string
  * - Fallback to local MongoDB instance for development
  * - Promise-based connection with proper error handling
  * - Automatic reconnection and connection pooling
- * 
+ *
  * Database Configuration:
  * - Production: MongoDB Atlas cloud database
  * - Development: Local MongoDB instance
  * - Connection string includes authentication and options
- * 
+ *
  * Error Handling:
  * - Logs successful connection confirmation
  * - Captures and logs connection errors for debugging
  */
 
-
 app.use('/api/admin', adminRoutes);
-
-
-
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medical_app')
   .then(() => {
@@ -149,14 +144,14 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medical_a
 
 /**
  * API Routes Configuration
- * 
+ *
  * Defines all application endpoints with modular route organization.
  * Each route module handles specific domain functionality.
  */
 
 /**
  * Health Check Endpoint
- * 
+ *
  * Simple endpoint to verify server is running and responsive.
  * Used for:
  * - Server health monitoring
@@ -169,7 +164,7 @@ app.get('/', (req, res) => {
 
 /**
  * Authentication Routes - /api/auth/*
- * 
+ *
  * Handles user authentication and session management:
  * - POST /api/auth/register - User registration (doctors/patients)
  * - POST /api/auth/login - User login with role validation
@@ -180,7 +175,7 @@ app.use('/api/auth', authRoutes);
 
 /**
  * Doctor Routes - /api/doctors/*
- * 
+ *
  * Manages doctor-related operations:
  * - GET /api/doctors - Get all doctors (public directory)
  * - GET /api/doctors/:id - Get specific doctor profile
@@ -191,7 +186,7 @@ app.use('/api/doctors', doctorRoutes);
 
 /**
  * Patient Routes - /api/patients/*
- * 
+ *
  * Manages patient-related operations:
  * - GET /api/patients/profile - Get patient profile (authenticated)
  * - PUT /api/patients/profile - Update patient profile (authenticated)
@@ -201,7 +196,7 @@ app.use('/api/patients', patientRoutes);
 
 /**
  * Appointment Routes - /api/appointments/*
- * 
+ *
  * Handles appointment booking and management:
  * - POST /api/appointments - Create new appointment
  * - GET /api/appointments/doctor - Get doctor's appointments
@@ -211,51 +206,50 @@ app.use('/api/patients', patientRoutes);
  */
 app.use('/api/appointments', appointmentRoutes);
 
-
 /**
  * Global Error Handling Middleware
- * 
+ *
  * Centralized error handling for all unhandled errors in the application.
- * 
+ *
  * Features:
  * - Catches all unhandled errors from routes and middleware
  * - Logs error stack trace for debugging (development/staging)
  * - Returns generic error message to client (security)
  * - Prevents application crashes from unhandled exceptions
- * 
+ *
  * Security Considerations:
  * - Hides internal error details from client responses
  * - Logs detailed errors server-side for debugging
  * - Returns consistent error format across application
- * 
+ *
  * Error Response Format:
  * {
  *   "message": "Something went wrong!",
  *   "status": 500
  * }
  */
-app.use((err, req, res, next) => {
-  console.error(err.stack);    // Log full error stack for debugging
+app.use((err, req, res, _next) => {
+  console.error(err.stack); // Log full error stack for debugging
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
 /**
  * Server Startup
- * 
+ *
  * Starts the HTTP server with Socket.io integration.
- * 
+ *
  * Server Features:
  * - Express HTTP server for REST API
  * - Socket.io WebSocket server for real-time features
  * - Configurable port with environment variable
  * - Startup confirmation logging
- * 
+ *
  * Real-time Features Enabled:
  * - Real-time chat messaging
  * - WebRTC video call signaling
  * - Online user status tracking
  * - Live notifications
- * 
+ *
  * Note: Uses 'server' from socket.js instead of 'app' to enable
  * both HTTP and WebSocket protocols on the same port.
  */
