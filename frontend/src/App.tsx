@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import LoginInfoBanner from './components/LoginInfoBanner';
@@ -16,7 +16,7 @@ import DoctorPage from './pages/DoctorPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogs from './pages/AdminLogs';
 import Appointments from './pages/Appointments';
-import { isAdmin } from './utils/auth';
+// import { isAdmin } from './utils/auth';
 
 interface GetCurrentUserResponse {
   data: {
@@ -31,9 +31,19 @@ interface GetCurrentUserResponse {
  * Ensures only admin users can access admin pages
  */
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  if (!isAdmin()) {
-    return <Navigate to="/login" replace />;
+  const { currentUser } = useApp();
+  const location = useLocation();
+
+  // If no user, send to login and preserve intended path
+  if (!currentUser) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
+
+  // Only allow admin/super_admin roles
+  if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 };
 
