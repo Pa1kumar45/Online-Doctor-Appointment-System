@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
@@ -39,20 +39,27 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   const { currentUser, setCurrentUser, getCurrentUser, loginInfo, hideLoginInfoToast } = useApp();
+  const hasFetchedUser = useRef(false);
 
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await getCurrentUser() as GetCurrentUserResponse;
-        if (response?.data?.data) {
-          setCurrentUser(response.data.data);
+    // Ensure this only runs once on mount
+    if (!hasFetchedUser.current) {
+      hasFetchedUser.current = true;
+      
+      const fetchCurrentUser = async () => {
+        try {
+          const response = await getCurrentUser() as GetCurrentUserResponse;
+          if (response?.data?.data) {
+            setCurrentUser(response.data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching current user:', error);
         }
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      }
-    };
-    fetchCurrentUser();
-  }, []);
+      };
+      
+      fetchCurrentUser();
+    }
+  }, [getCurrentUser, setCurrentUser]);
 
   return (
     <Router>
