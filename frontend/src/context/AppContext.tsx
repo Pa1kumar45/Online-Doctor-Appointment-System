@@ -119,16 +119,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     /**
      * User logout function - clears user state and calls logout API
      */
-    const logout = async () => {
+    const logout = useCallback(async () => {
         setCurrentUser(null);
         await axios.post('/auth/logout');
-    }
+    }, []);
 
     /**
      * Get current user function - fetches current user from server
      * Used for maintaining authentication state on app reload
      */
-    const getCurrentUser = async () => {
+    const getCurrentUser = useCallback(async () => {
         try {
             const response = await axios('/auth/me');
             console.log("current me ", response);
@@ -140,13 +140,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             console.error("Error getting current user:", error);
             throw error;
         }
-    }
+    }, []);
 
     /**
      * Send OTP function - requests OTP to be sent to user's email
      * Used for login and signup verification
      */
-    const sendOTP = async (data: { email: string; role: string; purpose: 'login' | 'registration' }) => {
+    const sendOTP = useCallback(async (data: { email: string; role: string; purpose: 'login' | 'registration' }) => {
         try {
             const response = await axios.post('/auth/send-otp', data);
             console.log('OTP sent successfully:', response.data);
@@ -154,13 +154,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             console.error('Error sending OTP:', error);
             throw error;
         }
-    }
+    }, []);
 
     /**
      * Verify OTP function - verifies OTP and completes authentication
      * Updates current user state on successful verification
      */
-    const verifyOTP = async (data: { email: string; otp: string; role: string; purpose: 'login' | 'registration' }) => {
+    const verifyOTP = useCallback(async (data: { email: string; otp: string; role: string; purpose: 'login' | 'registration' }) => {
         try {
             const response = await axios.post('/auth/verify-otp', data);
             console.log('OTP verified successfully:', response.data);
@@ -175,7 +175,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             console.error('Error verifying OTP:', error);
             throw error;
         }
-    }
+    }, []);
 
     /**
      * Theme toggle function - switches between light and dark modes
