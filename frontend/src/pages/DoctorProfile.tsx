@@ -1,13 +1,47 @@
+/**
+ * DoctorProfile Component
+ * 
+ * Complete profile management page for doctors.
+ * Allows doctors to update their professional information and availability schedule.
+ * 
+ * Features:
+ * - Edit personal information (name, email, contact)
+ * - Update professional details (specialization, qualification, experience)
+ * - Manage weekly schedule with time slots
+ * - Upload/update profile avatar
+ * - Change password
+ * - 12 fixed hourly time slots (9 AM - 9 PM)
+ * - Day-wise availability toggle
+ * - Form validation
+ * - Image preview
+ * - Dark mode support
+ * 
+ * Schedule Management:
+ * - 7-day weekly schedule
+ * - 12 time slots per day (1-hour intervals)
+ * - Toggle individual slots on/off
+ * - Persistent schedule storage
+ * 
+ * @component
+ * @example
+ * return (
+ *   <DoctorProfile />
+ * )
+ */
+
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Calendar, Clock, GraduationCap, Briefcase, Phone, Image } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ChangePasswordForm from '../components/ChangePasswordForm';
-import { Doctor, Schedule, Slot } from '../types/index.ts';
+import { Schedule, Doctor } from '../types/index.ts';
 
 import { useApp } from '../context/AppContext';
 
 import { doctorService } from '../services/doctor.service';
 
+/**
+ * Form data interface for doctor profile
+ */
 interface DoctorFormData {
   name: string;
   email: string;
@@ -20,7 +54,10 @@ interface DoctorFormData {
   schedule: Schedule[];
 }
 
-// Fixed 12 time slots from 9 AM to 9 PM (1 hour each)
+/**
+ * Fixed 12 time slots from 9 AM to 9 PM (1 hour each)
+ * These are the available booking slots for patients
+ */
 const FIXED_TIME_SLOTS = [
   { slotNumber: 1, startTime: '09:00', endTime: '10:00' },
   { slotNumber: 2, startTime: '10:00', endTime: '11:00' },
@@ -53,6 +90,15 @@ const DoctorProfile = () => {
     schedule: []
   });
 
+  /**
+   * Initialize schedule for all 7 days of the week
+   * 
+   * Creates schedule structure with existing data or empty slots.
+   * Ensures all slots have proper isAvailable flag.
+   * 
+   * @param {Schedule[]} existingSchedule - Existing schedule data
+   * @returns {Schedule[]} Initialized schedule for all days
+   */
   const initializeSchedule = (existingSchedule: Schedule[]) => {
     const days: Schedule['day'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     return days.map(day => {
@@ -69,34 +115,46 @@ const DoctorProfile = () => {
           }))
         };
       }
+
       // Initialize empty schedule for this day
       return { day, slots: [] };
     });
   };
 
+  /**
+   * Fetch and initialize doctor profile data
+   * 
+   * Loads current doctor's profile and initializes form with existing data.
+   * Only accessible to users with 'doctor' role.
+   */
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        
-        if(currentUser?.role === 'patient') {
+
+        // Only allow doctors to access this page
+        if (currentUser?.role === 'patient' || currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
           return;
         }
 
-        const initialFormData: DoctorFormData = {
-          name: currentUser?.name || '',
-          email: currentUser?.email || '',
-          avatar: currentUser?.avatar || '',
-          specialization: currentUser?.specialization || '',
-          experience: currentUser?.experience || 0,
-          qualification: currentUser?.qualification || '',
-          about: currentUser?.about || '',
-          contactNumber: currentUser?.contactNumber || '',
-          schedule: initializeSchedule(currentUser?.schedule || [])
-        };
-        
-        setFormData(initialFormData);
+        // Type guard to ensure currentUser is a Doctor
+        if (currentUser?.role === 'doctor') {
+          const doctorUser = currentUser as Doctor;
+          const initialFormData: DoctorFormData = {
+            name: doctorUser.name || '',
+            email: doctorUser.email || '',
+            avatar: doctorUser.avatar || '',
+            specialization: doctorUser.specialization || '',
+            experience: doctorUser.experience || 0,
+            qualification: doctorUser.qualification || '',
+            about: doctorUser.about || '',
+            contactNumber: doctorUser.contactNumber || '',
+            schedule: initializeSchedule(doctorUser.schedule || []),
+          };
+
+          setFormData(initialFormData);
+        }
       } catch (err) {
         console.error('Failed to load profile:', err);
         setError('Failed to load profile');
@@ -112,7 +170,7 @@ const DoctorProfile = () => {
     if (!formData) return;
     
     const { name, value } = e.target;
-    
+
     // For contact number, only allow digits and limit to 10 characters
     if (name === 'contactNumber') {
       const digits = value.replace(/\D/g, '');
@@ -144,15 +202,15 @@ const DoctorProfile = () => {
             isAvailable: !updatedSlots[existingSlotIndex].isAvailable
           };
           return { ...scheduleDay, slots: updatedSlots };
-        } else {
-          // Add new slot from fixed slots
-          const fixedSlot = FIXED_TIME_SLOTS.find(s => s.slotNumber === slotNumber);
-          if (fixedSlot) {
-            return {
-              ...scheduleDay,
-              slots: [...scheduleDay.slots, { ...fixedSlot, isAvailable: true }].sort((a, b) => a.slotNumber - b.slotNumber)
-            };
-          }
+        }
+
+        // Add new slot from fixed slots
+        const fixedSlot = FIXED_TIME_SLOTS.find(s => s.slotNumber === slotNumber);
+        if (fixedSlot) {
+          return {
+            ...scheduleDay,
+            slots: [...scheduleDay.slots, { ...fixedSlot, isAvailable: true }].sort((a, b) => a.slotNumber - b.slotNumber)
+          };
         }
       }
       return scheduleDay;
@@ -172,7 +230,7 @@ const DoctorProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData) return;
-    
+
     // Validate contact number is exactly 10 digits
     if (formData.contactNumber && formData.contactNumber.length !== 10) {
       setError('Contact number must be exactly 10 digits');
@@ -188,7 +246,7 @@ const DoctorProfile = () => {
       const cleanedSchedule = formData.schedule.map(day => ({
         ...day,
         slots: day.slots.filter(slot => slot.isAvailable)
-      })).filter(day => day.slots.length > 0); // Remove days with no available slots
+      })).filter(day => day.slots.length > 0);
 
       // Create a new object with all the form data
       const submitData = {
@@ -203,11 +261,11 @@ const DoctorProfile = () => {
       };
 
       const response = await doctorService.updateDoctorProfile(submitData);
-      
+
       // Update both currentUser and formData with the complete data
       setCurrentUser({...currentUser,...response});
       console.log("Profile update response:", response);
-      
+
       // Update form data with response
       const newFormData: DoctorFormData = {
         name: response.name || '',

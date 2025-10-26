@@ -1,9 +1,9 @@
 /**
  * Session Routes
- * 
+ *
  * Defines routes for session management operations.
  * All routes require authentication.
- * 
+ *
  * @module routes/sessions
  */
 
@@ -12,7 +12,7 @@ import {
   getSessions,
   revokeSession,
   revokeAllSessions,
-  getCurrentSession
+  getCurrentSession,
 } from '../controllers/sessionController.js';
 import { protect } from '../middleware/auth.js';
 

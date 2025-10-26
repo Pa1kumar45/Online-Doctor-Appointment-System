@@ -70,7 +70,7 @@ const SessionManagement = () => {
       setError('');
       const response = await authService.getSessions();
       setSessions(response.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch sessions:', err);
       setError(err.message || 'Failed to load sessions');
     } finally {
@@ -92,7 +92,7 @@ const SessionManagement = () => {
       
       // Refresh session list
       await fetchSessions();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to revoke session:', err);
       setError(err.message || 'Failed to logout from device');
     } finally {
@@ -114,7 +114,7 @@ const SessionManagement = () => {
       
       // Refresh session list
       await fetchSessions();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to revoke all sessions:', err);
       setError(err.message || 'Failed to logout from all devices');
     } finally {

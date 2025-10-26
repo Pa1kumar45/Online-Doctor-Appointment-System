@@ -1,12 +1,12 @@
 /**
  * Appointment Routes
- * 
+ *
  * This module defines all REST API endpoints related to appointment management.
  * All routes require authentication and provide comprehensive CRUD operations
  * for appointments between doctors and patients.
- * 
+ *
  * Base path: /api/appointments
- * 
+ *
  * @module appointmentRoutes
  * @requires express - Express.js web framework
  * @requires express-validator - Input validation middleware
@@ -15,7 +15,6 @@
  */
 
 import express from 'express';
-import { body } from 'express-validator';
 import {
   getAppointments,
   getAppointment,
@@ -24,7 +23,7 @@ import {
   deleteAppointment,
   getDoctorAppointments,
   getPatientAppointments,
-  getAvailableSlots
+  getAvailableSlots,
   // updateAppointmentStatus
 } from '../controllers/appointmentController.js';
 import { protect } from '../middleware/auth.js';
@@ -46,7 +45,7 @@ router.use(protect);
 /**
  * GET /api/appointments/available-slots/:doctorId
  * Get available time slots for a doctor on a specific date
- * 
+ *
  * @route GET /api/appointments/available-slots/:doctorId?date=YYYY-MM-DD
  * @access Private (Any authenticated user can check availability)
  * @middleware protect - JWT authentication required
@@ -60,7 +59,7 @@ router.get('/available-slots/:doctorId', getAvailableSlots);
 /**
  * GET /api/appointments
  * Retrieve appointments for the authenticated user
- * 
+ *
  * @route GET /api/appointments
  * @access Private (Any authenticated user)
  * @middleware protect - JWT authentication required
@@ -72,7 +71,7 @@ router.get('/', getAppointments);
 /**
  * GET /api/appointments/doctor
  * Retrieve appointments for the authenticated doctor
- * 
+ *
  * @route GET /api/appointments/doctor
  * @access Private (Doctor only - enforced by controller logic)
  * @middleware protect - JWT authentication required
@@ -84,7 +83,7 @@ router.get('/doctor/', getDoctorAppointments);
 /**
  * GET /api/appointments/patient
  * Retrieve appointments for the authenticated patient
- * 
+ *
  * @route GET /api/appointments/patient
  * @access Private (Patient only - enforced by controller logic)
  * @middleware protect - JWT authentication required
@@ -96,7 +95,7 @@ router.get('/patient/', getPatientAppointments);
 /**
  * GET /api/appointments/:id
  * Retrieve specific appointment details by ID
- * 
+ *
  * @route GET /api/appointments/:id
  * @access Private (Appointment participants only)
  * @middleware protect - JWT authentication required
@@ -114,7 +113,7 @@ router.get('/:id', getAppointment);
 /**
  * POST /api/appointments
  * Create a new appointment
- * 
+ *
  * @route POST /api/appointments
  * @access Private (Patient only - enforced by controller logic)
  * @middleware protect - JWT authentication required
@@ -130,7 +129,7 @@ router.post('/', createAppointment);
 /**
  * PUT /api/appointments/:id
  * Update existing appointment
- * 
+ *
  * @route PUT /api/appointments/:id
  * @access Private (Appointment participants only)
  * @middleware protect - JWT authentication required
@@ -147,7 +146,7 @@ router.put('/:id', updateAppointment);
 /**
  * DELETE /api/appointments/:id
  * Cancel/delete an appointment
- * 
+ *
  * @route DELETE /api/appointments/:id
  * @access Private (Appointment participants only)
  * @middleware protect - JWT authentication required

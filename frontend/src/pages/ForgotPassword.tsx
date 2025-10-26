@@ -1,20 +1,32 @@
 /**
- * ForgotPassword.tsx - Password Reset with OTP Verification
+ * ForgotPassword Component
  * 
- * This component provides a complete password reset flow:
- * 1. User enters email and role
- * 2. System sends OTP to email
- * 3. User enters OTP
- * 4. User sets new password
- * 5. Password updated
+ * Complete password reset flow with OTP verification.
+ * Three-step process: Email → OTP → New Password → Success.
  * 
  * Features:
  * - Email and role input
- * - OTP verification
- * - New password entry
+ * - OTP sending and verification
+ * - New password entry with confirmation
+ * - Password visibility toggle
+ * - OTP resend functionality
+ * - Multi-step form flow
  * - Form validation
- * - Success/error messaging
- * - Loading states
+ * - Auto-redirect after success
+ * - Dark mode support
+ * 
+ * Flow:
+ * 1. User enters email and role
+ * 2. System sends OTP to email
+ * 3. User enters received OTP
+ * 4. User creates new password
+ * 5. Password is reset and user is redirected to login
+ * 
+ * @component
+ * @example
+ * return (
+ *   <ForgotPassword />
+ * )
  */
 
 import { useState } from 'react';
@@ -22,6 +34,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle2, Loader2, Lock, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { authService } from '../services/auth.service';
 
+/**
+ * Form step type definition
+ */
 type Step = 'email' | 'otp' | 'password' | 'success';
 
 const ForgotPassword = () => {
@@ -39,6 +54,11 @@ const ForgotPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  /**
+   * Handle form input changes
+   * 
+   * @param {React.ChangeEvent} e - Input change event
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -47,7 +67,14 @@ const ForgotPassword = () => {
     setError('');
   };
 
-  // Step 1: Send OTP to email
+  /**
+   * Step 1: Send OTP to email
+   * 
+   * Validates email format and sends OTP to user's email.
+   * Proceeds to OTP entry step on success.
+   * 
+   * @param {React.FormEvent} e - Form submission event
+   */
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -72,7 +99,7 @@ const ForgotPassword = () => {
         role: formData.role
       });
       setStep('otp');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Send OTP error:', err);
       setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -80,7 +107,19 @@ const ForgotPassword = () => {
     }
   };
 
-  // Step 2: Verify OTP and set new password
+  /**
+   * Step 2: Verify OTP and set new password
+   * 
+   * Validates:
+   * - OTP is 6 digits
+   * - Password fields are filled
+   * - Password meets minimum length (6 characters)
+   * - Passwords match
+   * 
+   * Resets password and redirects to login on success.
+   * 
+   * @param {React.FormEvent} e - Form submission event
+   */
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -121,7 +160,7 @@ const ForgotPassword = () => {
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Reset password error:', err);
       setError(err.message || 'Failed to reset password. Please try again.');
     } finally {
@@ -129,7 +168,12 @@ const ForgotPassword = () => {
     }
   };
 
-  // Resend OTP
+  /**
+   * Resend OTP to user's email
+   * 
+   * Triggers when user didn't receive OTP or it expired.
+   * Uses same endpoint as initial OTP send.
+   */
   const handleResendOTP = async () => {
     setError('');
     setLoading(true);
@@ -140,7 +184,7 @@ const ForgotPassword = () => {
       });
       setError('');
       alert('New OTP sent to your email!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to resend OTP');
     } finally {
       setLoading(false);

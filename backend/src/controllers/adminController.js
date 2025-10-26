@@ -1,9 +1,8 @@
 // backend/src/controllers/adminController.js
-import Doctor from '../models/Doctor.js';
-import Patient from '../models/Patient.js';
-import Admin from '../models/Admin.js';
+import { Doctor } from '../models/Doctor.js';
+import { Patient } from '../models/Patient.js';
 import AdminActionLog from '../models/AdminActionLog.js';
-import Appointment from '../models/Appointment.js';
+import { Appointment } from '../models/Appointment.js';
 import AuthLog from '../models/AuthLog.js';
 
 /**
@@ -15,7 +14,7 @@ const getDashboardStats = async (req, res) => {
   try {
     // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split('T')[0];
-    
+
     // Get user counts
     const [
       totalDoctors,
@@ -25,7 +24,7 @@ const getDashboardStats = async (req, res) => {
       suspendedDoctors,
       suspendedPatients,
       todaysAppointments,
-      totalAppointments
+      totalAppointments,
     ] = await Promise.all([
       Doctor.countDocuments({ isActive: true }),
       Patient.countDocuments({ isActive: true }),
@@ -34,7 +33,7 @@ const getDashboardStats = async (req, res) => {
       Doctor.countDocuments({ isActive: false }),
       Patient.countDocuments({ isActive: false }),
       Appointment.countDocuments({ date: today }),
-      Appointment.countDocuments()
+      Appointment.countDocuments(),
     ]);
 
     // Get recent registrations (last 30 days)
@@ -43,7 +42,7 @@ const getDashboardStats = async (req, res) => {
 
     const recentRegistrations = await Promise.all([
       Doctor.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
-      Patient.countDocuments({ createdAt: { $gte: thirtyDaysAgo } })
+      Patient.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
     ]);
 
     res.json({
@@ -53,23 +52,23 @@ const getDashboardStats = async (req, res) => {
           totalDoctors,
           totalPatients,
           pendingVerification: pendingDoctors + pendingPatients,
-          suspended: suspendedDoctors + suspendedPatients
+          suspended: suspendedDoctors + suspendedPatients,
         },
         appointments: {
           today: todaysAppointments,
-          total: totalAppointments
+          total: totalAppointments,
         },
         recentActivity: {
           newDoctors: recentRegistrations[0],
-          newPatients: recentRegistrations[1]
-        }
-      }
+          newPatients: recentRegistrations[1],
+        },
+      },
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching dashboard statistics'
+      message: 'Error fetching dashboard statistics',
     });
   }
 };
@@ -87,36 +86,36 @@ const getAllUsers = async (req, res) => {
       role,
       status,
       verificationStatus,
-      search
+      search,
     } = req.query;
 
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    let users = [];
+    const users = [];
     let totalUsers = 0;
 
     // Build query filter
     const buildFilter = () => {
       const filter = {};
-      
+
       if (status) {
         filter.isActive = status === 'active';
       }
-      
+
       if (verificationStatus) {
         filter.verificationStatus = verificationStatus;
       }
-      
+
       if (search) {
         filter.$or = [
           { name: { $regex: search, $options: 'i' } },
           { email: { $regex: search, $options: 'i' } },
-          { contactNumber: { $regex: search, $options: 'i' } }
+          { contactNumber: { $regex: search, $options: 'i' } },
         ];
       }
-      
+
       return filter;
     };
 
@@ -129,13 +128,13 @@ const getAllUsers = async (req, res) => {
         .limit(limitNum)
         .sort({ createdAt: -1 })
         .lean();
-      
-      users.push(...doctors.map(doc => ({
+
+      users.push(...doctors.map((doc) => ({
         ...doc,
         userType: 'doctor',
-        fullName: doc.name
+        fullName: doc.name,
       })));
-      
+
       if (!role) {
         totalUsers += await Doctor.countDocuments(filter);
       } else {
@@ -151,13 +150,13 @@ const getAllUsers = async (req, res) => {
         .limit(limitNum)
         .sort({ createdAt: -1 })
         .lean();
-      
-      users.push(...patients.map(pat => ({
+
+      users.push(...patients.map((pat) => ({
         ...pat,
         userType: 'patient',
-        fullName: pat.name
+        fullName: pat.name,
       })));
-      
+
       if (!role) {
         totalUsers += await Patient.countDocuments(filter);
       } else {
@@ -176,35 +175,17 @@ const getAllUsers = async (req, res) => {
           totalPages,
           totalUsers,
           hasNext: pageNum < totalPages,
-          hasPrev: pageNum > 1
-        }
-      }
+          hasPrev: pageNum > 1,
+        },
+      },
     });
   } catch (error) {
     console.error('Get all users error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching users'
+      message: 'Error fetching users',
     });
   }
-};
-
-/**
- * Helper function to get users from both collections
- */
-const getAllUsersFromBothCollections = async (pipeline) => {
-  const [doctors, patients] = await Promise.all([
-    Doctor.aggregate([
-      { $addFields: { userType: 'doctor', fullName: '$name' } },
-      ...pipeline.slice(1) // Skip the $unionWith stage
-    ]),
-    Patient.aggregate([
-      { $addFields: { userType: 'patient', fullName: '$name' } },
-      ...pipeline.slice(1)
-    ])
-  ]);
-
-  return [...doctors, ...patients].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
 /**
@@ -220,20 +201,20 @@ const verifyUser = async (req, res) => {
 
     // Determine the model based on userType
     const Model = userType === 'doctor' ? Doctor : Patient;
-    
+
     // Get current user data for logging
     const currentUser = await Model.findById(id);
     if (!currentUser) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     // Store previous data for audit log
     const previousData = {
       verificationStatus: currentUser.verificationStatus,
-      isActive: currentUser.isActive
+      isActive: currentUser.isActive,
     };
 
     // Update user
@@ -243,9 +224,9 @@ const verifyUser = async (req, res) => {
         verificationStatus,
         verifiedBy: adminId,
         verifiedAt: new Date(),
-        ...(verificationStatus === 'rejected' && { isActive: false })
+        ...(verificationStatus === 'rejected' && { isActive: false }),
       },
-      { new: true }
+      { new: true },
     );
 
     // Log admin action
@@ -257,11 +238,11 @@ const verifyUser = async (req, res) => {
       previousData,
       newData: {
         verificationStatus: updatedUser.verificationStatus,
-        isActive: updatedUser.isActive
+        isActive: updatedUser.isActive,
       },
       reason,
       ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
     });
 
     // TODO: Send notification email to user
@@ -270,15 +251,35 @@ const verifyUser = async (req, res) => {
     res.json({
       success: true,
       message: `User ${verificationStatus} successfully`,
-      data: updatedUser
+      data: updatedUser,
     });
   } catch (error) {
     console.error('Verify user error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating user verification status'
+      message: 'Error updating user verification status',
     });
   }
+};
+
+/**
+ * Cancel future appointments for suspended user
+ */
+const cancelFutureAppointments = async (userId, userType) => {
+  const query = userType === 'doctor' ? { doctorId: userId } : { patientId: userId };
+
+  await Appointment.updateMany(
+    {
+      ...query,
+      date: { $gte: new Date() },
+      status: { $in: ['pending', 'confirmed'] },
+    },
+    {
+      status: 'cancelled',
+      cancellationReason: `Account ${userType === 'doctor' ? 'doctor' : 'patient'} suspended by admin`,
+      cancelledAt: new Date(),
+    },
+  );
 };
 
 /**
@@ -293,12 +294,12 @@ const toggleUserStatus = async (req, res) => {
     const adminId = req.user._id;
 
     const Model = userType === 'doctor' ? Doctor : Patient;
-    
+
     const currentUser = await Model.findById(id);
     if (!currentUser) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -308,8 +309,8 @@ const toggleUserStatus = async (req, res) => {
       ...(action === 'suspend' && {
         suspensionReason: reason,
         suspendedBy: adminId,
-        suspendedAt: new Date()
-      })
+        suspendedAt: new Date(),
+      }),
     };
 
     const updatedUser = await Model.findByIdAndUpdate(id, updateData, { new: true });
@@ -329,41 +330,21 @@ const toggleUserStatus = async (req, res) => {
       newData: { isActive },
       reason,
       ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
     });
 
     res.json({
       success: true,
       message: `User ${action}d successfully`,
-      data: updatedUser
+      data: updatedUser,
     });
   } catch (error) {
     console.error('Toggle user status error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating user status'
+      message: 'Error updating user status',
     });
   }
-};
-
-/**
- * Cancel future appointments for suspended user
- */
-const cancelFutureAppointments = async (userId, userType) => {
-  const query = userType === 'doctor' ? { doctorId: userId } : { patientId: userId };
-  
-  await Appointment.updateMany(
-    {
-      ...query,
-      date: { $gte: new Date() },
-      status: { $in: ['pending', 'confirmed'] }
-    },
-    {
-      status: 'cancelled',
-      cancellationReason: `Account ${userType === 'doctor' ? 'doctor' : 'patient'} suspended by admin`,
-      cancelledAt: new Date()
-    }
-  );
 };
 
 /**
@@ -381,23 +362,23 @@ const updateUserRole = async (req, res) => {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({
         success: false,
-        message: 'Only super admin can change user roles'
+        message: 'Only super admin can change user roles',
       });
     }
 
     const Model = userType === 'doctor' ? Doctor : Patient;
     const currentUser = await Model.findById(id);
-    
+
     if (!currentUser) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     // For now, we're managing role within the same collection
     // In future, you might want to implement role migration between collections
-    
+
     // Log the action
     await AdminActionLog.create({
       adminId,
@@ -407,19 +388,19 @@ const updateUserRole = async (req, res) => {
       previousData: { userType },
       newData: { userType: newRole },
       ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
     });
 
     res.json({
       success: true,
       message: 'Role update logged (feature in development)',
-      data: currentUser
+      data: currentUser,
     });
   } catch (error) {
     console.error('Update user role error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating user role'
+      message: 'Error updating user role',
     });
   }
 };
@@ -436,11 +417,11 @@ const getAdminLogs = async (req, res) => {
       limit = 20,
       actionType,
       targetUserId,
-      adminId
+      adminId,
     } = req.query;
 
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
 
     const query = {};
@@ -454,7 +435,7 @@ const getAdminLogs = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum),
-      AdminActionLog.countDocuments(query)
+      AdminActionLog.countDocuments(query),
     ]);
 
     res.json({
@@ -464,15 +445,15 @@ const getAdminLogs = async (req, res) => {
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(total / limitNum),
-          total
-        }
-      }
+          total,
+        },
+      },
     });
   } catch (error) {
     console.error('Get admin logs error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching admin logs'
+      message: 'Error fetching admin logs',
     });
   }
 };
@@ -494,18 +475,18 @@ const getAuthLogs = async (req, res) => {
       userId,
       userType,
       startDate,
-      endDate
+      endDate,
     } = req.query;
 
     // Build filter query
     const filters = {};
-    
+
     if (action) filters.action = action;
     if (success !== undefined) filters.success = success === 'true';
     if (email) filters.email = { $regex: email, $options: 'i' }; // Case-insensitive search
     if (userId) filters.userId = userId;
     if (userType) filters.userType = userType;
-    
+
     // Date range filter
     if (startDate || endDate) {
       filters.createdAt = {};
@@ -515,10 +496,10 @@ const getAuthLogs = async (req, res) => {
 
     // Pagination options
     const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       sortBy: 'createdAt',
-      sortOrder: -1 // Most recent first
+      sortOrder: -1, // Most recent first
     };
 
     // Get logs using the model's static method
@@ -535,15 +516,15 @@ const getAuthLogs = async (req, res) => {
         userId,
         userType,
         startDate,
-        endDate
-      }
+        endDate,
+      },
     });
   } catch (error) {
     console.error('Get auth logs error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching authentication logs',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
@@ -560,10 +541,10 @@ const getUserAuthLogs = async (req, res) => {
     const { page = 1, limit = 50 } = req.query;
 
     const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       sortBy: 'createdAt',
-      sortOrder: -1
+      sortOrder: -1,
     };
 
     // Get user-specific logs
@@ -573,14 +554,14 @@ const getUserAuthLogs = async (req, res) => {
       success: true,
       data: result.logs,
       pagination: result.pagination,
-      userId
+      userId,
     });
   } catch (error) {
     console.error('Get user auth logs error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching user authentication logs',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
@@ -597,10 +578,10 @@ const getAuthLogsByEmail = async (req, res) => {
     const { page = 1, limit = 50 } = req.query;
 
     const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       sortBy: 'createdAt',
-      sortOrder: -1
+      sortOrder: -1,
     };
 
     // Get email-specific logs
@@ -610,14 +591,14 @@ const getAuthLogsByEmail = async (req, res) => {
       success: true,
       data: result.logs,
       pagination: result.pagination,
-      email
+      email,
     });
   } catch (error) {
     console.error('Get auth logs by email error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching authentication logs by email',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
@@ -646,7 +627,7 @@ const getAuthStats = async (req, res) => {
     const [totalLogs, successfulLogs, failedLogs] = await Promise.all([
       AuthLog.countDocuments(filters),
       AuthLog.countDocuments({ ...filters, success: true }),
-      AuthLog.countDocuments({ ...filters, success: false })
+      AuthLog.countDocuments({ ...filters, success: false }),
     ]);
 
     // Get top failure reasons
@@ -655,21 +636,21 @@ const getAuthStats = async (req, res) => {
         $match: {
           ...filters,
           success: false,
-          failureReason: { $ne: null }
-        }
+          failureReason: { $ne: null },
+        },
       },
       {
         $group: {
           _id: '$failureReason',
-          count: { $sum: 1 }
-        }
+          count: { $sum: 1 },
+        },
       },
       {
-        $sort: { count: -1 }
+        $sort: { count: -1 },
       },
       {
-        $limit: 10
-      }
+        $limit: 10,
+      },
     ]);
 
     res.json({
@@ -679,22 +660,22 @@ const getAuthStats = async (req, res) => {
           total: totalLogs,
           successful: successfulLogs,
           failed: failedLogs,
-          successRate: totalLogs > 0 ? ((successfulLogs / totalLogs) * 100).toFixed(2) : 0
+          successRate: totalLogs > 0 ? ((successfulLogs / totalLogs) * 100).toFixed(2) : 0,
         },
         actionStats: stats,
         topFailureReasons: failureReasons,
         dateRange: {
           startDate: startDate || 'all time',
-          endDate: endDate || 'present'
-        }
-      }
+          endDate: endDate || 'present',
+        },
+      },
     });
   } catch (error) {
     console.error('Get auth stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching authentication statistics',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
@@ -712,11 +693,11 @@ const getFailedLoginAttempts = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Email parameter is required'
+        message: 'Email parameter is required',
       });
     }
 
-    const attempts = await AuthLog.getFailedAttempts(email, parseInt(timeWindow));
+    const attempts = await AuthLog.getFailedAttempts(email, parseInt(timeWindow, 10));
 
     res.json({
       success: true,
@@ -724,15 +705,15 @@ const getFailedLoginAttempts = async (req, res) => {
         email,
         failedAttempts: attempts.length,
         timeWindow: `${timeWindow} minutes`,
-        attempts
-      }
+        attempts,
+      },
     });
   } catch (error) {
     console.error('Get failed attempts error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching failed login attempts',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
@@ -748,6 +729,6 @@ export {
   getUserAuthLogs,
   getAuthLogsByEmail,
   getAuthStats,
-  getFailedLoginAttempts
+  getFailedLoginAttempts,
 
 };

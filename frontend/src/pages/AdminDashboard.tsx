@@ -1,3 +1,35 @@
+/**
+ * AdminDashboard Component
+ * 
+ * Main administrative dashboard for user management and system oversight.
+ * Provides comprehensive tools for managing doctors and patients.
+ * 
+ * Features:
+ * - Dashboard statistics (total users, verifications, active users)
+ * - User list with filtering and search
+ * - User verification management
+ * - Account suspension/activation
+ * - Pagination support
+ * - Filter by user type, status, verification
+ * - Search by name/email
+ * - User action modals
+ * - Quick access to logs
+ * - Dark mode support
+ * 
+ * Admin Actions:
+ * - Verify/reject user registrations
+ * - Suspend/activate user accounts
+ * - View user details
+ * - Delete users
+ * - Filter and search users
+ * 
+ * @component
+ * @example
+ * return (
+ *   <AdminDashboard />
+ * )
+ */
+
 // frontend/src/pages/AdminDashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,13 +47,10 @@ import adminService from '../services/admin.service';
 import { DashboardStats, UserManagementUser, UserFilters } from '../types/admin';
 import UserActionModal from '../components/UserActionModal';
 
-/**
- * Admin Dashboard Component
- * Main dashboard for admin user management with statistics and user operations
- */
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  // State management
+  
+  // State management for dashboard data and UI
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [users, setUsers] = useState<UserManagementUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +83,8 @@ const AdminDashboard: React.FC = () => {
 
   /**
    * Fetch dashboard statistics from API
+   * 
+   * Loads overview statistics including user counts and pending verifications.
    */
   const loadDashboardStats = async () => {
     try {
@@ -68,6 +99,9 @@ const AdminDashboard: React.FC = () => {
 
   /**
    * Fetch users with current filters
+   * 
+   * Retrieves paginated user list based on active filters.
+   * Updates users list and pagination state.
    */
   const loadUsers = async () => {
     setUsersLoading(true);
@@ -86,7 +120,7 @@ const AdminDashboard: React.FC = () => {
   /**
    * Handle filter changes
    */
-  const handleFilterChange = (key: keyof UserFilters, value: any) => {
+  const handleFilterChange = (key: keyof UserFilters, value: string | number | undefined) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,

@@ -8,7 +8,7 @@ dotenv.config();
 /**
  * Create Test Admin User
  * Run this script to create the first admin account
- * 
+ *
  * Usage: npm run create-admin
  */
 const createTestAdmin = async () => {
@@ -19,7 +19,7 @@ const createTestAdmin = async () => {
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email: 'admin@healthconnect.com' });
-    
+
     if (existingAdmin) {
       console.log('\n⚠️  Admin user already exists!');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -45,8 +45,8 @@ const createTestAdmin = async () => {
         'suspend_users',
         'view_analytics',
         'manage_admins',
-        'system_settings'
-      ]
+        'system_settings',
+      ],
     });
 
     console.log('\n✅ Admin user created successfully!');

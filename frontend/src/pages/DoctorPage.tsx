@@ -1,3 +1,34 @@
+/**
+ * DoctorPage Component
+ * 
+ * Individual doctor profile and appointment booking page.
+ * Allows patients to view doctor details and book appointments.
+ * 
+ * Features:
+ * - Display doctor profile information
+ * - View doctor's schedule and availability
+ * - Date selection (today to 7 days ahead)
+ * - Real-time slot availability checking
+ * - Appointment booking with reason
+ * - Avatar display with fallback
+ * - Form validation
+ * - Success/error notifications
+ * - Dark mode support
+ * 
+ * Booking Flow:
+ * 1. Select appointment date
+ * 2. View available time slots for that date
+ * 3. Select time slot
+ * 4. Enter reason for appointment
+ * 5. Submit booking request
+ * 
+ * @component
+ * @example
+ * return (
+ *   <DoctorPage />
+ * )
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {  Clock, Briefcase, GraduationCap, User, Phone, Calendar, CheckCircle } from 'lucide-react';
@@ -5,6 +36,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { doctorService } from '../services/doctor.service';
 import { appointmentService } from '../services/appointment.service';
 import { Doctor } from '../types/index.ts';
+import { getErrorMessage } from '../utils/auth';
 
 import { useApp } from '../context/AppContext';
 
@@ -22,34 +54,50 @@ const DoctorPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Calculate min and max dates (today and 7 days from today)
+  /**
+   * Calculate date range for appointment booking
+   * Allows booking from today up to 7 days in advance
+   */
   const today = new Date();
   const minDate = today.toISOString().split('T')[0];
   const maxDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+  // Load doctor data on component mount
   useEffect(() => {
     loadDoctor();
   }, [id]);
 
+  // Fetch available slots when date or doctor changes
   useEffect(() => {
     if (selectedDate && doctor) {
       fetchAvailableSlots();
     }
   }, [selectedDate, doctor]);
 
+  /**
+   * Load doctor details by ID
+   * 
+   * Fetches complete doctor profile from backend.
+   */
   const loadDoctor = async () => {
     try {
       setIsLoading(true);
       const doctorData = await doctorService.getDoctorById(id!);
       console.log("Doctor data:", doctorData);
       setDoctor(doctorData);
-    } catch (err) {
+    } catch {
       setError('Failed to load doctor details');
     } finally {
       setIsLoading(false);
     }
   };
 
+  /**
+   * Fetch available time slots for selected date
+   * 
+   * Retrieves slots that are not already booked.
+   * Resets selected slot when date changes.
+   */
   const fetchAvailableSlots = async () => {
     if (!doctor || !selectedDate) return;
     
@@ -69,6 +117,14 @@ const DoctorPage: React.FC = () => {
     }
   };
 
+  /**
+   * Handle appointment booking submission
+   * 
+   * Validates all required fields (doctor, date, slot, reason)
+   * and creates appointment request.
+   * 
+   * @param {React.FormEvent} e - Form submission event
+   */
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -106,9 +162,9 @@ const DoctorPage: React.FC = () => {
       setTimeout(() => {
         navigate('/appointments');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to book appointment:', err);
-      setError(err.message || 'Failed to book appointment. Please try again.');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

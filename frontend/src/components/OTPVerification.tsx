@@ -14,6 +14,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Mail, Clock, RefreshCw } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
+import { getErrorMessage } from '../utils/auth';
 
 interface OTPVerificationProps {
   isOpen: boolean;
@@ -130,8 +131,8 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
       setIsVerifying(true);
       setError(null);
       await onVerify(otpValue);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid OTP. Please try again.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
       setOtp(Array(6).fill(''));
       inputRefs.current[0]?.focus();
     } finally {
@@ -149,9 +150,9 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
       setTimeLeft(otpExpiryTime);
       setCanResend(false);
       inputRefs.current[0]?.focus();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to resend OTP. Please try again.');
-    } finally {
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
+    } finally{
       setIsResending(false);
     }
   };

@@ -1,12 +1,12 @@
 /**
  * Appointment Controller
- * 
+ *
  * This module handles all appointment-related operations including:
  * - Creating, reading, updating, and deleting appointments
  * - Managing appointment status and scheduling
  * - Handling doctor and patient appointment views
  * - Appointment authorization and access control
- * 
+ *
  * @module appointmentController
  * @requires Appointment - Appointment model for database operations
  * @requires Doctor - Doctor model for validation and population
@@ -31,23 +31,23 @@ const FIXED_TIME_SLOTS = [
   { slotNumber: 9, startTime: '17:00', endTime: '18:00' },
   { slotNumber: 10, startTime: '18:00', endTime: '19:00' },
   { slotNumber: 11, startTime: '19:00', endTime: '20:00' },
-  { slotNumber: 12, startTime: '20:00', endTime: '21:00' }
+  { slotNumber: 12, startTime: '20:00', endTime: '21:00' },
 ];
 
 /**
  * Get available slots for a doctor on a specific date
- * 
+ *
  * Returns only the slots that:
  * 1. The doctor has marked as available in their schedule
  * 2. Are not already booked for that date (no accepted/scheduled appointment)
- * 
+ *
  * @async
  * @function getAvailableSlots
  * @param {Object} req - Express request object
  * @param {string} req.params.doctorId - Doctor's ObjectId
  * @param {string} req.query.date - Date in YYYY-MM-DD format
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Array} Array of available slot objects with slotNumber, startTime, endTime
  * @throws {400} If date parameter is missing
  * @throws {404} If doctor not found
@@ -69,49 +69,49 @@ export const getAvailableSlots = async (req, res) => {
     }
 
     // Get the day of week for the requested date
-    const dateObj = new Date(date + 'T00:00:00');
+    const dateObj = new Date(`${date}T00:00:00`);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayOfWeek = dayNames[dateObj.getDay()];
 
     // Find doctor's schedule for that day
-    const daySchedule = doctor.schedule?.find(s => s.day === dayOfWeek);
-    
+    const daySchedule = doctor.schedule?.find((s) => s.day === dayOfWeek);
+
     if (!daySchedule || daySchedule.slots.length === 0) {
-      return res.json({ 
+      return res.json({
         message: 'Doctor does not work on this day',
-        availableSlots: [] 
+        availableSlots: [],
       });
     }
 
     // Get doctor's preferred slots (those marked as available)
     const doctorAvailableSlots = daySchedule.slots
-      .filter(slot => slot.isAvailable)
-      .map(slot => slot.slotNumber);
+      .filter((slot) => slot.isAvailable)
+      .map((slot) => slot.slotNumber);
 
     // Get already booked/accepted slots for this date
     const bookedAppointments = await Appointment.find({
       doctorId,
       date,
-      status: { $in: ['scheduled', 'pending'] } // Both pending and accepted appointments block the slot
+      status: { $in: ['scheduled', 'pending'] }, // Both pending and accepted appointments block the slot
     });
 
-    const bookedSlotNumbers = bookedAppointments.map(apt => apt.slotNumber);
+    const bookedSlotNumbers = bookedAppointments.map((apt) => apt.slotNumber);
 
     // Filter out booked slots from doctor's available slots
     const availableSlotNumbers = doctorAvailableSlots.filter(
-      slotNum => !bookedSlotNumbers.includes(slotNum)
+      (slotNum) => !bookedSlotNumbers.includes(slotNum),
     );
 
     // Map to full slot information
-    const availableSlots = availableSlotNumbers.map(slotNum => {
-      const slotInfo = FIXED_TIME_SLOTS.find(s => s.slotNumber === slotNum);
+    const availableSlots = availableSlotNumbers.map((slotNum) => {
+      const slotInfo = FIXED_TIME_SLOTS.find((s) => s.slotNumber === slotNum);
       return slotInfo;
     }).filter(Boolean); // Remove any undefined entries
 
     res.json({
       date,
       dayOfWeek,
-      availableSlots
+      availableSlots,
     });
   } catch (error) {
     console.error('Error getting available slots:', error);
@@ -121,17 +121,17 @@ export const getAvailableSlots = async (req, res) => {
 
 /**
  * Get all appointments for the authenticated user
- * 
+ *
  * This function retrieves all appointments where the authenticated user
  * is either the doctor or the patient. Results include populated doctor
  * and patient information.
- * 
+ *
  * @async
  * @function getAppointments
  * @param {Object} req - Express request object
  * @param {Object} req.user - Authenticated user object (from middleware)
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Array} JSON array of appointments with populated doctor/patient data
  * @throws {500} If database query fails
  */
@@ -142,13 +142,13 @@ export const getAppointments = async (req, res) => {
     const appointments = await Appointment.find({
       $or: [
         { doctorId: req.user._id },
-        { patientId: req.user._id }
-      ]
+        { patientId: req.user._id },
+      ],
     })
     // Populate related doctor and patient data with selected fields
-    .populate('doctorId', 'name specialization') // Doctor info
-    .populate('patientId', 'name'); // Patient info
-    
+      .populate('doctorId', 'name specialization') // Doctor info
+      .populate('patientId', 'name'); // Patient info
+
     res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching appointments' });
@@ -157,17 +157,17 @@ export const getAppointments = async (req, res) => {
 
 /**
  * Get a specific appointment by ID
- * 
+ *
  * This function retrieves a single appointment with authorization check.
  * Only the doctor or patient involved in the appointment can view it.
- * 
+ *
  * @async
  * @function getAppointment
  * @param {Object} req - Express request object
  * @param {string} req.params.id - Appointment ObjectId
  * @param {Object} req.user - Authenticated user object (from middleware)
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Object} JSON object with appointment data and populated references
  * @throws {404} If appointment not found
  * @throws {403} If user not authorized to view this appointment
@@ -185,8 +185,8 @@ export const getAppointment = async (req, res) => {
     }
 
     // Authorization check: Only doctor or patient involved can view appointment
-    if (appointment.doctorId._id.toString() !== req.user._id.toString() &&
-        appointment.patientId._id.toString() !== req.user._id.toString()) {
+    if (appointment.doctorId._id.toString() !== req.user._id.toString()
+        && appointment.patientId._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to view this appointment' });
     }
 
@@ -198,10 +198,10 @@ export const getAppointment = async (req, res) => {
 
 /**
  * Create a new appointment (patients only)
- * 
+ *
  * This function allows patients to book appointments with doctors.
  * Validates doctor existence and user role before creating the appointment.
- * 
+ *
  * @async
  * @function createAppointment
  * @param {Object} req - Express request object
@@ -216,7 +216,7 @@ export const getAppointment = async (req, res) => {
  * @param {Object} req.user - Authenticated patient object (from middleware)
  * @param {string} req.userRole - User role (from middleware)
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Object} JSON response with created appointment and populated data
  * @throws {404} If doctor not found
  * @throws {403} If user is not a patient
@@ -225,8 +225,10 @@ export const getAppointment = async (req, res) => {
 export const createAppointment = async (req, res) => {
   try {
     console.log('createAppointment:', req.body);
-    
-    const { doctorId, date, slotNumber, reason } = req.body;
+
+    const {
+      doctorId, date, slotNumber, reason,
+    } = req.body;
 
     // Validate required fields
     if (!slotNumber || slotNumber < 1 || slotNumber > 12) {
@@ -235,31 +237,31 @@ export const createAppointment = async (req, res) => {
 
     // Validate that the target doctor exists
     const doctor = await Doctor.findById(doctorId);
-    console.log("found appointment doctor", doctor._id);
-    
+    console.log('found appointment doctor', doctor._id);
+
     if (!doctor) {
       console.log('Doctor not found');
       return res.status(404).json({ message: 'Doctor not found' });
     }
-    
+
     // Authorization: Only patients can create appointments
-    if(req.userRole !== 'patient'){
+    if (req.userRole !== 'patient') {
       console.log('Only patients can create appointments');
       return res.status(403).json({ message: 'Only patients can create appointments' });
     }
 
     // Get the day of week for the requested date
-    const dateObj = new Date(date + 'T00:00:00');
+    const dateObj = new Date(`${date}T00:00:00`);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayOfWeek = dayNames[dateObj.getDay()];
 
     // Check if doctor works on this day and has this slot available
-    const daySchedule = doctor.schedule?.find(s => s.day === dayOfWeek);
+    const daySchedule = doctor.schedule?.find((s) => s.day === dayOfWeek);
     if (!daySchedule) {
       return res.status(400).json({ message: 'Doctor does not work on this day' });
     }
 
-    const doctorSlot = daySchedule.slots.find(s => s.slotNumber === slotNumber);
+    const doctorSlot = daySchedule.slots.find((s) => s.slotNumber === slotNumber);
     if (!doctorSlot || !doctorSlot.isAvailable) {
       return res.status(400).json({ message: 'This time slot is not available in doctor\'s schedule' });
     }
@@ -269,7 +271,7 @@ export const createAppointment = async (req, res) => {
       doctorId,
       date,
       slotNumber,
-      status: { $in: ['scheduled', 'pending'] }
+      status: { $in: ['scheduled', 'pending'] },
     });
 
     if (existingAppointment) {
@@ -277,7 +279,7 @@ export const createAppointment = async (req, res) => {
     }
 
     // Get start and end times from the fixed slots
-    const slotInfo = FIXED_TIME_SLOTS.find(s => s.slotNumber === slotNumber);
+    const slotInfo = FIXED_TIME_SLOTS.find((s) => s.slotNumber === slotNumber);
 
     // Create new appointment document
     const appointment = new Appointment({
@@ -288,19 +290,19 @@ export const createAppointment = async (req, res) => {
       startTime: slotInfo.startTime,
       endTime: slotInfo.endTime,
       reason,
-      status: 'pending' // Doctor needs to accept it
+      status: 'pending', // Doctor needs to accept it
     });
 
     // Save appointment to database
-    const savedAppointment = await appointment.save();
-    
+    await appointment.save();
+
     // Populate doctor and patient information for response
     const populatedAppointment = await appointment.populate([
       { path: 'doctorId', select: 'name specialization' },
-      { path: 'patientId', select: 'name' }
+      { path: 'patientId', select: 'name' },
     ]);
-    
-    res.status(200).json({data: populatedAppointment});
+
+    res.status(200).json({ data: populatedAppointment });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Error creating appointment' });
@@ -309,10 +311,10 @@ export const createAppointment = async (req, res) => {
 
 /**
  * Update an existing appointment
- * 
+ *
  * This function allows authorized users (doctor or patient involved) to update
  * appointment details such as status, notes, ratings, etc.
- * 
+ *
  * @async
  * @function updateAppointment
  * @param {Object} req - Express request object
@@ -320,7 +322,7 @@ export const createAppointment = async (req, res) => {
  * @param {Object} req.body - Updated appointment data
  * @param {Object} req.user - Authenticated user object (from middleware)
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Object} JSON response with updated appointment and populated data
  * @throws {404} If appointment not found
  * @throws {403} If user not authorized to update this appointment
@@ -329,32 +331,32 @@ export const createAppointment = async (req, res) => {
 export const updateAppointment = async (req, res) => {
   try {
     console.log('updateAppointment:hit');
-    
+
     const appointment = await Appointment.findById(req.params.id);
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
 
     // Authorization: Only doctor or patient involved can update appointment
-    if (appointment.doctorId.toString() !== req.user._id.toString() &&
-        appointment.patientId.toString() !== req.user._id.toString()) {
+    if (appointment.doctorId.toString() !== req.user._id.toString()
+        && appointment.patientId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this appointment' });
     }
 
     const updates = req.body;
-    
+
     // Apply all provided updates to the appointment
-    Object.keys(updates).forEach(key => {
+    Object.keys(updates).forEach((key) => {
       appointment[key] = updates[key];
     });
 
     // Save updated appointment
-    const updatedAppointment = await appointment.save();
-    
+    await appointment.save();
+
     // Populate doctor and patient information for response
     const populatedAppointment = await appointment.populate([
       { path: 'doctorId', select: 'name specialization' },
-      { path: 'patientId', select: 'name' }
+      { path: 'patientId', select: 'name' },
     ]);
 
     res.json(populatedAppointment);
@@ -365,17 +367,17 @@ export const updateAppointment = async (req, res) => {
 
 /**
  * Delete an appointment
- * 
+ *
  * This function allows authorized users (doctor or patient involved) to delete
  * an appointment from the system.
- * 
+ *
  * @async
  * @function deleteAppointment
  * @param {Object} req - Express request object
  * @param {string} req.params.id - Appointment ObjectId to delete
  * @param {Object} req.user - Authenticated user object (from middleware)
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Object} JSON confirmation message
  * @throws {404} If appointment not found
  * @throws {403} If user not authorized to delete this appointment
@@ -389,8 +391,8 @@ export const deleteAppointment = async (req, res) => {
     }
 
     // Authorization: Only doctor or patient involved can delete appointment
-    if (appointment.doctorId.toString() !== req.user._id.toString() &&
-        appointment.patientId.toString() !== req.user._id.toString()) {
+    if (appointment.doctorId.toString() !== req.user._id.toString()
+        && appointment.patientId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this appointment' });
     }
 
@@ -404,16 +406,16 @@ export const deleteAppointment = async (req, res) => {
 
 /**
  * Get all appointments for a specific doctor
- * 
+ *
  * This function retrieves all appointments where the authenticated user is the doctor.
  * Results are sorted by date and start time, and include populated patient information.
- * 
+ *
  * @async
  * @function getDoctorAppointments
  * @param {Object} req - Express request object
  * @param {Object} req.user - Authenticated doctor object (from middleware)
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Array} JSON array of doctor's appointments with patient data
  * @throws {404} If doctor not found
  * @throws {500} If database query fails
@@ -422,25 +424,25 @@ export const getDoctorAppointments = async (req, res) => {
   try {
     console.log('getDoctorAppointments');
     const doctorId = req.user._id;
-    
+
     // Verify that the doctor exists in the database
     const doctor = await Doctor.findById(doctorId);
     console.log(doctor._id);
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
-    
+
     // Note: Authorization check commented out - currently allows any authenticated user
     // Uncomment below for stricter authorization:
     // if (doctorId !== req.user._id.toString() && req.user.role !== 'admin') {
     //   return res.status(403).json({ message: 'Not authorized to view these appointments' });
     // }
-    
+
     // Find all appointments for this doctor, populate patient info, and sort chronologically
     const appointments = await Appointment.find({ doctorId })
       .populate('patientId', 'name') // Include patient name only
       .sort({ date: 1, startTime: 1 }); // Sort by date and time ascending
-    
+
     res.json(appointments);
   } catch (error) {
     console.log(error);
@@ -449,17 +451,17 @@ export const getDoctorAppointments = async (req, res) => {
 };
 /**
  * Get all appointments for the authenticated patient
- * 
+ *
  * This function retrieves all appointments where the authenticated user is the patient.
  * Results are sorted by date and start time, and include populated doctor information.
- * 
+ *
  * @async
  * @function getPatientAppointments
  * @param {Object} req - Express request object
  * @param {Object} req.user - Authenticated patient object (from middleware)
  * @param {string} req.userRole - User role (from middleware)
  * @param {Object} res - Express response object
- * 
+ *
  * @returns {Array} JSON array of patient's appointments with doctor data
  * @throws {403} If user is not a patient
  * @throws {500} If database query fails
@@ -468,22 +470,21 @@ export const getPatientAppointments = async (req, res) => {
   try {
     console.log('getPatientAppointments hit');
     const userId = req.user._id;
-    
+
     // Authorization: Only patients can access this endpoint
-    if(req.userRole !== 'patient'){
+    if (req.userRole !== 'patient') {
       console.log('Only patients can get appointments');
       return res.status(403).json({ message: 'Only patients can create appointments' });
     }
-    
+
     // Find all appointments for this patient, populate doctor info, and sort chronologically
     const appointments = await Appointment.find({ patientId: userId })
       .populate('doctorId', 'name specialization') // Include doctor name and specialization
       .sort({ date: 1, startTime: 1 }); // Sort by date and time ascending
-    
-    res.json(appointments); 
-  }
-  catch (error) {
+
+    res.json(appointments);
+  } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Error fetching patient appointments' });
   }
-}
+};

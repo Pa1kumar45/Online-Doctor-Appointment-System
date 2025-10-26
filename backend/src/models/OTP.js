@@ -1,17 +1,17 @@
 /**
  * OTP (One-Time Password) Model
- * 
+ *
  * This model stores OTP codes for email verification during:
  * - User registration (email verification)
  * - User login (two-factor authentication)
  * - Password reset (future implementation)
- * 
+ *
  * Features:
  * - 6-digit numeric OTP
  * - 10-minute expiration
  * - Automatic cleanup of expired OTPs
  * - Rate limiting (prevent OTP spam)
- * 
+ *
  * @module OTP
  */
 
@@ -28,7 +28,7 @@ const otpSchema = new mongoose.Schema({
     required: [true, 'Email is required'],
     lowercase: true,
     trim: true,
-    index: true // Index for faster lookups
+    index: true, // Index for faster lookups
   },
 
   /**
@@ -39,7 +39,7 @@ const otpSchema = new mongoose.Schema({
   otp: {
     type: String,
     required: [true, 'OTP is required'],
-    length: 6
+    length: 6,
   },
 
   /**
@@ -50,7 +50,7 @@ const otpSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['doctor', 'patient'],
-    required: true
+    required: true,
   },
 
   /**
@@ -62,7 +62,7 @@ const otpSchema = new mongoose.Schema({
     type: String,
     enum: ['registration', 'login', 'password-reset'],
     required: true,
-    default: 'login'
+    default: 'login',
   },
 
   /**
@@ -72,7 +72,7 @@ const otpSchema = new mongoose.Schema({
    */
   verified: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   /**
@@ -83,7 +83,7 @@ const otpSchema = new mongoose.Schema({
   attempts: {
     type: Number,
     default: 0,
-    max: 3 // Maximum 3 attempts
+    max: 3, // Maximum 3 attempts
   },
 
   /**
@@ -93,10 +93,10 @@ const otpSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
-    default: () => new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-  }
+    default: () => new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+  },
 }, {
-  timestamps: true // Adds createdAt and updatedAt
+  timestamps: true, // Adds createdAt and updatedAt
 });
 
 /**
@@ -114,7 +114,7 @@ otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
  * Check if OTP is expired
  * @returns {Boolean} True if expired
  */
-otpSchema.methods.isExpired = function() {
+otpSchema.methods.isExpired = function () {
   return Date.now() > this.expiresAt.getTime();
 };
 
@@ -122,14 +122,14 @@ otpSchema.methods.isExpired = function() {
  * Check if OTP can still be attempted
  * @returns {Boolean} True if attempts remaining
  */
-otpSchema.methods.canAttempt = function() {
+otpSchema.methods.canAttempt = function () {
   return this.attempts < 3;
 };
 
 /**
  * Increment attempt counter
  */
-otpSchema.methods.incrementAttempts = async function() {
+otpSchema.methods.incrementAttempts = async function () {
   this.attempts += 1;
   await this.save();
 };
@@ -137,7 +137,7 @@ otpSchema.methods.incrementAttempts = async function() {
 /**
  * Mark OTP as verified
  */
-otpSchema.methods.markAsVerified = async function() {
+otpSchema.methods.markAsVerified = async function () {
   this.verified = true;
   await this.save();
 };
@@ -146,7 +146,7 @@ otpSchema.methods.markAsVerified = async function() {
  * Static method: Generate a random 6-digit OTP
  * @returns {String} 6-digit OTP
  */
-otpSchema.statics.generateOTP = function() {
+otpSchema.statics.generateOTP = function () {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
@@ -157,12 +157,12 @@ otpSchema.statics.generateOTP = function() {
  * @param {String} purpose - OTP purpose (registration/login/password-reset)
  * @returns {Object} { otp: String, otpDoc: Document }
  */
-otpSchema.statics.createOTP = async function(email, role, purpose = 'login') {
+otpSchema.statics.createOTP = async function (email, role, purpose = 'login') {
   // Delete any existing unverified OTPs for this email and purpose
-  await this.deleteMany({ 
-    email, 
+  await this.deleteMany({
+    email,
     purpose,
-    verified: false 
+    verified: false,
   });
 
   // Generate new OTP
@@ -174,7 +174,7 @@ otpSchema.statics.createOTP = async function(email, role, purpose = 'login') {
     role,
     otp,
     purpose,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
   });
 
   return { otp, otpDoc };
@@ -187,36 +187,36 @@ otpSchema.statics.createOTP = async function(email, role, purpose = 'login') {
  * @param {String} purpose - OTP purpose
  * @returns {Object} { success: Boolean, message: String, otpDoc: Document }
  */
-otpSchema.statics.verifyOTP = async function(email, otp, purpose = 'login') {
+otpSchema.statics.verifyOTP = async function (email, otp, purpose = 'login') {
   // Find the most recent OTP for this email and purpose
-  const otpDoc = await this.findOne({ 
-    email, 
+  const otpDoc = await this.findOne({
+    email,
     purpose,
-    verified: false 
+    verified: false,
   }).sort({ createdAt: -1 });
 
   if (!otpDoc) {
-    return { 
-      success: false, 
-      message: 'OTP not found or already verified. Please request a new OTP.' 
+    return {
+      success: false,
+      message: 'OTP not found or already verified. Please request a new OTP.',
     };
   }
 
   // Check if OTP is expired
   if (otpDoc.isExpired()) {
     await otpDoc.deleteOne();
-    return { 
-      success: false, 
-      message: 'OTP has expired. Please request a new OTP.' 
+    return {
+      success: false,
+      message: 'OTP has expired. Please request a new OTP.',
     };
   }
 
   // Check if max attempts reached
   if (!otpDoc.canAttempt()) {
     await otpDoc.deleteOne();
-    return { 
-      success: false, 
-      message: 'Maximum verification attempts exceeded. Please request a new OTP.' 
+    return {
+      success: false,
+      message: 'Maximum verification attempts exceeded. Please request a new OTP.',
     };
   }
 
@@ -224,19 +224,19 @@ otpSchema.statics.verifyOTP = async function(email, otp, purpose = 'login') {
   if (otpDoc.otp !== otp) {
     await otpDoc.incrementAttempts();
     const attemptsLeft = 3 - otpDoc.attempts;
-    return { 
-      success: false, 
-      message: `Invalid OTP. ${attemptsLeft} attempt(s) remaining.` 
+    return {
+      success: false,
+      message: `Invalid OTP. ${attemptsLeft} attempt(s) remaining.`,
     };
   }
 
   // OTP is valid - mark as verified
   await otpDoc.markAsVerified();
 
-  return { 
-    success: true, 
+  return {
+    success: true,
     message: 'OTP verified successfully',
-    otpDoc 
+    otpDoc,
   };
 };
 
@@ -246,11 +246,11 @@ otpSchema.statics.verifyOTP = async function(email, otp, purpose = 'login') {
  * @param {String} purpose - OTP purpose
  * @returns {Object} { allowed: Boolean, message: String, waitTime: Number }
  */
-otpSchema.statics.checkRateLimit = async function(email, purpose) {
+otpSchema.statics.checkRateLimit = async function (email, purpose) {
   // Find the most recent OTP for this email
-  const recentOTP = await this.findOne({ 
-    email, 
-    purpose 
+  const recentOTP = await this.findOne({
+    email,
+    purpose,
   }).sort({ createdAt: -1 });
 
   if (!recentOTP) {
@@ -263,10 +263,10 @@ otpSchema.statics.checkRateLimit = async function(email, purpose) {
 
   if (timeSinceLastOTP < oneMinute) {
     const waitTime = Math.ceil((oneMinute - timeSinceLastOTP) / 1000);
-    return { 
-      allowed: false, 
+    return {
+      allowed: false,
       message: `Please wait ${waitTime} seconds before requesting a new OTP.`,
-      waitTime 
+      waitTime,
     };
   }
 

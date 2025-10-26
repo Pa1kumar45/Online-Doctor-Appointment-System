@@ -10,7 +10,7 @@ import {
   getUserAuthLogs,
   getAuthLogsByEmail,
   getAuthStats,
-  getFailedLoginAttempts
+  getFailedLoginAttempts,
 } from '../controllers/adminController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 

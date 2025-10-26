@@ -1,9 +1,9 @@
 /**
  * Session Cleanup Utility
- * 
+ *
  * Provides scheduled cleanup of expired sessions
  * Runs periodically to keep the database clean
- * 
+ *
  * @module sessionCleanup
  */
 
@@ -12,7 +12,7 @@ import Session from '../models/Session.js';
 /**
  * Clean up expired sessions
  * Marks expired sessions as inactive
- * 
+ *
  * @returns {Promise<Object>} Cleanup result
  */
 export const cleanupExpiredSessions = async () => {
@@ -29,7 +29,7 @@ export const cleanupExpiredSessions = async () => {
 /**
  * Delete old inactive sessions
  * Permanently removes sessions that have been inactive for a specified period
- * 
+ *
  * @param {number} daysOld - Delete sessions older than this many days (default: 30)
  * @returns {Promise<Object>} Deletion result
  */
@@ -47,13 +47,13 @@ export const deleteOldSessions = async (daysOld = 30) => {
 /**
  * Start periodic session cleanup
  * Runs cleanup tasks at specified intervals
- * 
+ *
  * @param {number} intervalMinutes - Minutes between cleanup runs (default: 60)
  * @returns {NodeJS.Timeout} Interval reference
  */
 export const startSessionCleanup = (intervalMinutes = 60) => {
   console.log(`⏰ Session cleanup scheduled every ${intervalMinutes} minutes`);
-  
+
   // Run cleanup immediately on start
   cleanupExpiredSessions().catch(console.error);
 
@@ -72,7 +72,7 @@ export const startSessionCleanup = (intervalMinutes = 60) => {
 
 /**
  * Schedule a task to run daily
- * 
+ *
  * @param {Function} task - Task to run
  */
 function scheduleDaily(task) {
@@ -81,7 +81,9 @@ function scheduleDaily(task) {
     now.getFullYear(),
     now.getMonth(),
     now.getDate() + 1,
-    0, 0, 0 // Midnight
+    0,
+    0,
+    0, // Midnight
   );
   const msUntilMidnight = midnight.getTime() - now.getTime();
 
@@ -95,5 +97,5 @@ function scheduleDaily(task) {
 export default {
   cleanupExpiredSessions,
   deleteOldSessions,
-  startSessionCleanup
+  startSessionCleanup,
 };

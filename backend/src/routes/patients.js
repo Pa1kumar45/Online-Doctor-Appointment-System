@@ -1,12 +1,12 @@
 /**
  * Patient Routes
- * 
+ *
  * This module defines all REST API endpoints related to patient operations.
  * Routes include public access for patient lookup and protected routes for
  * patient profile management and medical history updates.
- * 
+ *
  * Base path: /api/patients
- * 
+ *
  * @module patientRoutes
  * @requires express - Express.js web framework
  * @requires express-validator - Input validation middleware
@@ -15,13 +15,12 @@
  */
 
 import express from 'express';
-import { body } from 'express-validator';
 import {
   getPatients,
   getPatient,
   updatePatient,
   deletePatient,
-  updateMedicalHistory
+  updateMedicalHistory,
 } from '../controllers/patientController.js';
 import { protect, patientOnly } from '../middleware/auth.js';
 
@@ -37,7 +36,7 @@ const router = express.Router();
 /**
  * GET /api/patients
  * Retrieve list of all patients
- * 
+ *
  * @route GET /api/patients
  * @access Public
  * @description Get list of patients (typically for doctor reference)
@@ -48,7 +47,7 @@ router.get('/', getPatients);
 /**
  * GET /api/patients/:id
  * Retrieve specific patient details by ID
- * 
+ *
  * @route GET /api/patients/:id
  * @access Public
  * @description Get detailed information about a specific patient
@@ -65,7 +64,7 @@ router.get('/:id', getPatient);
 /**
  * PUT /api/patients/profile
  * Update patient's own profile information
- * 
+ *
  * @route PUT /api/patients/profile
  * @access Private (Patient only)
  * @middleware protect - JWT authentication required
@@ -77,7 +76,7 @@ router.get('/:id', getPatient);
  * @body {string} [address] - Patient's residential address
  * @body {Object} [emergencyContact] - Emergency contact information
  * @returns {Object} Updated patient profile
- * 
+ *
  * @note Currently validation is disabled, all fields are optional
  */
 // Commented validation for flexibility - can be re-enabled if needed:
@@ -92,7 +91,7 @@ router.put('/profile', protect, patientOnly, updatePatient);
 /**
  * DELETE /api/patients/:id
  * Delete patient account
- * 
+ *
  * @route DELETE /api/patients/:id
  * @access Private (Patient only)
  * @middleware protect - JWT authentication required
@@ -105,7 +104,7 @@ router.delete('/:id', protect, patientOnly, deletePatient);
 /**
  * PUT /api/patients/medical-history
  * Update patient's medical history information
- * 
+ *
  * @route PUT /api/patients/medical-history
  * @access Private (Patient only)
  * @middleware protect - JWT authentication required
@@ -116,7 +115,7 @@ router.delete('/:id', protect, patientOnly, deletePatient);
  * @body {Array} [surgeries] - List of past surgeries
  * @body {string} [bloodType] - Patient's blood type
  * @returns {Object} Updated medical history
- * 
+ *
  * @note Currently validation is disabled for flexibility
  */
 router.put('/medical-history', protect, patientOnly, [

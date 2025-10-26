@@ -1,8 +1,44 @@
+/**
+ * UserActionModal Component
+ * 
+ * Admin modal for performing actions on user accounts.
+ * Supports verification, status changes (suspend/activate), and role changes.
+ * 
+ * Features:
+ * - User verification (approve/reject/review)
+ * - Account suspension/activation
+ * - Reason requirement for critical actions
+ * - Warning messages for destructive actions
+ * - User details display
+ * - Dark mode support
+ * 
+ * @component
+ * @param {UserManagementUser} user - User to perform action on
+ * @param {string} actionType - Type of action: 'verify' | 'status' | 'role'
+ * @param {Function} onClose - Close modal callback
+ * @param {Function} onVerify - Verification action callback
+ * @param {Function} onToggleStatus - Status toggle callback
+ * 
+ * @example
+ * return (
+ *   <UserActionModal
+ *     user={selectedUser}
+ *     actionType="verify"
+ *     onClose={() => setModalOpen(false)}
+ *     onVerify={handleVerify}
+ *     onToggleStatus={handleToggleStatus}
+ *   />
+ * )
+ */
+
 // frontend/src/components/UserActionModal.tsx
 import React, { useState } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserManagementUser } from '../types/admin';
 
+/**
+ * Props interface for UserActionModal component
+ */
 interface UserActionModalProps {
   user: UserManagementUser;
   actionType: 'verify' | 'status' | 'role';
@@ -11,10 +47,6 @@ interface UserActionModalProps {
   onToggleStatus: (action: 'suspend' | 'activate', reason?: string) => void;
 }
 
-/**
- * User Action Modal Component
- * Modal for performing admin actions on users (verify, suspend/activate, role changes)
- */
 const UserActionModal: React.FC<UserActionModalProps> = ({
   user,
   actionType,
@@ -28,6 +60,11 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
 
   /**
    * Handle form submission
+   * 
+   * Executes the selected action (verify or status change)
+   * and handles loading states.
+   * 
+   * @param {React.FormEvent} e - Form submission event
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +85,8 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
 
   /**
    * Get modal title based on action type
+   * 
+   * @returns {string} Modal title
    */
   const getModalTitle = (): string => {
     switch (actionType) {
@@ -64,6 +103,12 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
 
   /**
    * Get available actions based on action type
+   * 
+   * Returns different action options for:
+   * - verify: approved/rejected/under_review
+   * - status: suspend/activate (based on current status)
+   * 
+   * @returns {Array} Array of action options with value, label, and color
    */
   const getActionOptions = () => {
     switch (actionType) {
@@ -84,6 +129,12 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
 
   /**
    * Check if reason is required for selected action
+   * 
+   * Reason is mandatory for destructive actions:
+   * - Rejecting verification
+   * - Suspending account
+   * 
+   * @returns {boolean} True if reason is required
    */
   const isReasonRequired = (): boolean => {
     return selectedAction === 'rejected' || selectedAction === 'suspend';

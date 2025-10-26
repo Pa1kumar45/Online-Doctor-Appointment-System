@@ -1,3 +1,32 @@
+/**
+ * DoctorDashboard Component
+ * 
+ * Central dashboard for doctors to manage their appointments.
+ * Displays all appointments with filtering and status management capabilities.
+ * 
+ * Features:
+ * - View all appointments (pending/upcoming/active/past)
+ * - Accept or decline pending appointments
+ * - Add comments to appointments
+ * - Real-time status filtering
+ * - Appointment time validation
+ * - Color-coded status badges
+ * - Dark mode support
+ * 
+ * Filter Types:
+ * - all: Show all appointments
+ * - pending: Awaiting doctor approval
+ * - upcoming: Scheduled for future
+ * - active: Currently in progress
+ * - past: Completed or cancelled
+ * 
+ * @component
+ * @example
+ * return (
+ *   <DoctorDashboard />
+ * )
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Check, X, Clock, Calendar, User, AlertCircle } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,10 +41,17 @@ const DoctorDashboard = () => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [filter, setFilter] = useState<'all' | 'pending' | 'upcoming' | 'active' | 'past'>('active');
 
+    // Fetch appointments on component mount
     useEffect(() => {
         fetchAppointments();
     }, []);
 
+    /**
+     * Fetch all appointments for the current doctor
+     * 
+     * Retrieves appointments from the backend and updates state.
+     * Handles loading and error states.
+     */
     const fetchAppointments = async () => {
         try {
             setIsLoading(true);
@@ -29,6 +65,15 @@ const DoctorDashboard = () => {
         }
     };
 
+    /**
+     * Update appointment status
+     * 
+     * Allows doctor to accept, decline, or complete appointments.
+     * Refreshes appointment list after update.
+     * 
+     * @param {Appointment} appointment - Appointment to update
+     * @param {AppointmentStatus} status - New status to set
+     */
     const handleUpdateAppointment = async (appointment: Appointment, status: AppointmentStatus) => {
         try {
             await appointmentService.updateAppointment(
@@ -42,6 +87,14 @@ const DoctorDashboard = () => {
         }
     };
 
+    /**
+     * Handle comment change for an appointment
+     * 
+     * Updates the comment field in appointment state.
+     * 
+     * @param {string} id - Appointment ID
+     * @param {React.ChangeEvent} e - Textarea change event
+     */
     const handleChangeComment = (id: string, e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setAppointments(prev => prev.map(appointment =>
             appointment._id === id
@@ -58,6 +111,16 @@ const DoctorDashboard = () => {
         return <div className="flex justify-center items-center h-screen"><LoadingSpinner /></div>;
     }
 
+    /**
+     * Filter appointments based on selected filter
+     * 
+     * Filtering logic:
+     * - pending: Status is pending
+     * - upcoming: Start time is in future and status is scheduled
+     * - active: Currently in progress (between start and end time)
+     * - past: End time has passed or status is completed/cancelled
+     * - all: No filter applied
+     */
     const filteredAppointments = appointments.filter(appointment => {
         const appointmentStartStamp = new Date(`${appointment.date}T${appointment.startTime}`);
         const appointmentEndStamp = new Date(`${appointment.date}T${appointment.endTime}`);
@@ -75,6 +138,15 @@ const DoctorDashboard = () => {
         return true;
     });
 
+    /**
+     * Get color class for appointment status badge
+     * 
+     * Maps appointment status to Tailwind CSS color classes
+     * for visual differentiation.
+     * 
+     * @param {AppointmentStatus} status - Appointment status
+     * @returns {string} Tailwind CSS classes for badge styling
+     */
     const getStatusBadgeColor = (status: AppointmentStatus) => {
         switch (status) {
             case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';

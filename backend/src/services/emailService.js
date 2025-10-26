@@ -1,22 +1,32 @@
 /**
  * Email Service
- * 
+ *
  * This service handles all email-related functionality:
  * - OTP emails for registration and login
  * - Password reset emails
  * - Welcome emails
  * - Appointment notifications (future)
- * 
+ *
  * Uses Nodemailer with Gmail SMTP
- * 
+ *
  * @module emailService
  */
 
 import pkg from 'nodemailer';
-const { createTransport } = pkg;
 import dotenv from 'dotenv';
 
+const { createTransport } = pkg;
+
 dotenv.config();
+
+/**
+ * Helper function to get display name for role
+ */
+const getRoleDisplay = (role) => {
+  if (role === 'doctor') return 'Doctor';
+  if (role === 'patient') return 'Patient';
+  return 'Admin';
+};
 
 /**
  * Create reusable nodemailer transporter
@@ -34,13 +44,13 @@ const createTransporter = () => {
       service: process.env.EMAIL_SERVICE || 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
+        pass: process.env.EMAIL_PASSWORD,
       },
       // Additional security options
       secure: true, // Use TLS
       tls: {
-        rejectUnauthorized: true
-      }
+        rejectUnauthorized: true,
+      },
     });
 
     console.log('✅ Email service configured successfully');
@@ -62,7 +72,7 @@ const transporter = createTransporter();
  */
 const getOTPEmailTemplate = (name, otp, purpose) => {
   const actionText = purpose === 'registration' ? 'complete your registration' : 'log in to your account';
-  
+
   return `
     <!DOCTYPE html>
     <html>
@@ -200,7 +210,7 @@ const getOTPEmailTemplate = (name, otp, purpose) => {
  */
 const getOTPEmailPlainText = (name, otp, purpose) => {
   const actionText = purpose === 'registration' ? 'complete your registration' : 'log in to your account';
-  
+
   return `
 Hello ${name}!
 
@@ -232,47 +242,49 @@ This is an automated email. Please do not reply to this message.
  * @param {String} options.purpose - Purpose (registration/login)
  * @returns {Promise<Object>} { success: Boolean, message: String, info: Object }
  */
-export const sendOTPEmail = async ({ email, name, otp, purpose = 'login' }) => {
+export const sendOTPEmail = async ({
+  email, name, otp, purpose = 'login',
+}) => {
   // Check if transporter is configured
   if (!transporter) {
     console.error('❌ Email service not configured');
     return {
       success: false,
-      message: 'Email service not configured. Please contact administrator.'
+      message: 'Email service not configured. Please contact administrator.',
     };
   }
 
-  const subject = purpose === 'registration' 
-    ? '🔐 Verify Your Email - HealthConnect Registration' 
+  const subject = purpose === 'registration'
+    ? '🔐 Verify Your Email - HealthConnect Registration'
     : '🔐 Your Login OTP - HealthConnect';
 
   const mailOptions = {
     from: {
       name: 'HealthConnect',
-      address: process.env.EMAIL_FROM || process.env.EMAIL_USER
+      address: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     },
     to: email,
-    subject: subject,
+    subject,
     html: getOTPEmailTemplate(name, otp, purpose),
-    text: getOTPEmailPlainText(name, otp, purpose)
+    text: getOTPEmailPlainText(name, otp, purpose),
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ OTP email sent to ${email}: ${info.messageId}`);
-    
+
     return {
       success: true,
       message: 'OTP sent successfully',
-      info
+      info,
     };
   } catch (error) {
     console.error('❌ Error sending OTP email:', error);
-    
+
     return {
       success: false,
       message: 'Failed to send OTP email. Please try again later.',
-      error: error.message
+      error: error.message,
     };
   }
 };
@@ -295,7 +307,7 @@ export const sendWelcomeEmail = async ({ email, name, role }) => {
   const mailOptions = {
     from: {
       name: 'HealthConnect',
-      address: process.env.EMAIL_FROM || process.env.EMAIL_USER
+      address: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     },
     to: email,
     subject: '🎉 Welcome to HealthConnect!',
@@ -325,7 +337,7 @@ export const sendWelcomeEmail = async ({ email, name, role }) => {
         </div>
       </body>
       </html>
-    `
+    `,
   };
 
   try {
@@ -346,14 +358,16 @@ export const sendWelcomeEmail = async ({ email, name, role }) => {
  * @param {String} options.role - User role
  * @returns {Promise<Object>} { success: Boolean, message: String }
  */
-export const sendPasswordResetEmail = async ({ email, name, resetToken, role }) => {
+export const sendPasswordResetEmail = async ({
+  email, name, resetToken, role,
+}) => {
   if (!transporter) {
     throw new Error('Email service not configured');
   }
 
   // Create reset URL
   const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
-  
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -471,7 +485,7 @@ export const sendPasswordResetEmail = async ({ email, name, resetToken, role }) 
         <div class="content">
           <p>Hi <strong>${name}</strong>,</p>
           
-          <p>We received a request to reset your password for your <strong>${role === 'doctor' ? 'Doctor' : role === 'patient' ? 'Patient' : 'Admin'}</strong> account.</p>
+          <p>We received a request to reset your password for your <strong>${getRoleDisplay(role)}</strong> account.</p>
           
           <p>Click the button below to reset your password:</p>
           
@@ -513,7 +527,7 @@ export const sendPasswordResetEmail = async ({ email, name, resetToken, role }) 
     from: `"Doctor Appointment System" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Password Reset Request - Doctor Appointment System',
-    html: htmlContent
+    html: htmlContent,
   };
 
   try {
@@ -658,7 +672,7 @@ export const sendPasswordChangedEmail = async ({ email, name }) => {
     from: `"Doctor Appointment System" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Password Changed - Doctor Appointment System',
-    html: htmlContent
+    html: htmlContent,
   };
 
   try {
@@ -677,22 +691,22 @@ export const sendPasswordChangedEmail = async ({ email, name }) => {
  */
 export const verifyEmailService = async () => {
   if (!transporter) {
-    return { 
-      configured: false, 
-      message: 'Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD in .env' 
+    return {
+      configured: false,
+      message: 'Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD in .env',
     };
   }
 
   try {
     await transporter.verify();
-    return { 
-      configured: true, 
-      message: 'Email service is configured and ready to send emails' 
+    return {
+      configured: true,
+      message: 'Email service is configured and ready to send emails',
     };
   } catch (error) {
-    return { 
-      configured: false, 
-      message: `Email service configuration error: ${error.message}` 
+    return {
+      configured: false,
+      message: `Email service configuration error: ${error.message}`,
     };
   }
 };
@@ -702,5 +716,5 @@ export default {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
-  verifyEmailService
+  verifyEmailService,
 };

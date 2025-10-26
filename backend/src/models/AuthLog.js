@@ -4,17 +4,17 @@ const authLogSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     refPath: 'userType',
-    default: null // Null for failed login attempts where user doesn't exist
+    default: null, // Null for failed login attempts where user doesn't exist
   },
   userType: {
     type: String,
     enum: ['Doctor', 'Patient', 'Admin'],
-    default: null
+    default: null,
   },
   email: {
     type: String,
     required: true,
-    index: true
+    index: true,
   },
   action: {
     type: String,
@@ -32,34 +32,34 @@ const authLogSchema = new mongoose.Schema({
       'password_reset_failed',
       'password_change',
       'admin_login',
-      'failed_admin_login'
+      'failed_admin_login',
     ],
-    index: true
+    index: true,
   },
   ipAddress: {
     type: String,
-    required: true
+    required: true,
   },
   userAgent: {
     type: String,
-    required: true
+    required: true,
   },
   success: {
     type: Boolean,
     required: true,
     default: true,
-    index: true
+    index: true,
   },
   failureReason: {
     type: String,
-    default: null
+    default: null,
   },
   metadata: {
     type: mongoose.Schema.Types.Mixed,
-    default: {}
-  }
-}, { 
-  timestamps: true 
+    default: {},
+  },
+}, {
+  timestamps: true,
 });
 
 // Indexes for efficient querying
@@ -70,7 +70,7 @@ authLogSchema.index({ success: 1, createdAt: -1 });
 authLogSchema.index({ createdAt: -1 });
 
 // Static method to log authentication events
-authLogSchema.statics.logEvent = async function(eventData) {
+authLogSchema.statics.logEvent = async function (eventData) {
   try {
     const log = new this(eventData);
     await log.save();
@@ -83,12 +83,12 @@ authLogSchema.statics.logEvent = async function(eventData) {
 };
 
 // Static method to get logs with pagination
-authLogSchema.statics.getLogs = async function(filters = {}, options = {}) {
+authLogSchema.statics.getLogs = async function (filters = {}, options = {}) {
   const {
     page = 1,
     limit = 50,
     sortBy = 'createdAt',
-    sortOrder = -1
+    sortOrder = -1,
   } = options;
 
   const skip = (page - 1) * limit;
@@ -100,44 +100,44 @@ authLogSchema.statics.getLogs = async function(filters = {}, options = {}) {
       .skip(skip)
       .limit(limit)
       .lean(),
-    this.countDocuments(filters)
+    this.countDocuments(filters),
   ]);
 
   return {
     logs,
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       total,
-      pages: Math.ceil(total / limit)
-    }
+      pages: Math.ceil(total / limit),
+    },
   };
 };
 
 // Static method to get user-specific logs
-authLogSchema.statics.getUserLogs = async function(userId, options = {}) {
+authLogSchema.statics.getUserLogs = async function (userId, options = {}) {
   return this.getLogs({ userId }, options);
 };
 
 // Static method to get logs by email (useful for failed login attempts)
-authLogSchema.statics.getLogsByEmail = async function(email, options = {}) {
+authLogSchema.statics.getLogsByEmail = async function (email, options = {}) {
   return this.getLogs({ email }, options);
 };
 
 // Static method to get failed login attempts
-authLogSchema.statics.getFailedAttempts = async function(email, timeWindow = 15) {
+authLogSchema.statics.getFailedAttempts = async function (email, timeWindow = 15) {
   const cutoffTime = new Date(Date.now() - timeWindow * 60 * 1000);
-  
+
   return this.find({
     email,
     action: { $in: ['failed_login', 'failed_admin_login', 'failed_otp'] },
     success: false,
-    createdAt: { $gte: cutoffTime }
+    createdAt: { $gte: cutoffTime },
   }).sort({ createdAt: -1 });
 };
 
 // Static method to get statistics
-authLogSchema.statics.getStats = async function(startDate, endDate) {
+authLogSchema.statics.getStats = async function (startDate, endDate) {
   const match = {};
   if (startDate || endDate) {
     match.createdAt = {};
@@ -152,16 +152,16 @@ authLogSchema.statics.getStats = async function(startDate, endDate) {
         _id: '$action',
         count: { $sum: 1 },
         successCount: {
-          $sum: { $cond: ['$success', 1, 0] }
+          $sum: { $cond: ['$success', 1, 0] },
         },
         failureCount: {
-          $sum: { $cond: ['$success', 0, 1] }
-        }
-      }
+          $sum: { $cond: ['$success', 0, 1] },
+        },
+      },
     },
     {
-      $sort: { count: -1 }
-    }
+      $sort: { count: -1 },
+    },
   ]);
 
   return stats;

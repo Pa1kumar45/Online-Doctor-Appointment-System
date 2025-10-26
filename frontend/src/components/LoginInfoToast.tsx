@@ -1,6 +1,50 @@
+/**
+ * LoginInfoToast Component
+ * 
+ * Animated toast notification that displays detailed login activity information.
+ * Shows current, previous login, and last logout timestamps with relative time formatting.
+ * 
+ * Features:
+ * - Slide-in animation from right
+ * - Auto-dismiss after 10 seconds
+ * - Manual close button
+ * - Relative time formatting (e.g., "5 minutes ago")
+ * - Visual icons for each activity type
+ * - Progress indicator for auto-close
+ * - Dark mode support
+ * 
+ * Time Display Logic:
+ * - < 1 minute: "Just now"
+ * - < 60 minutes: "X minutes ago"
+ * - < 24 hours: "X hours ago"
+ * - < 7 days: "X days ago"
+ * - >= 7 days: Full date and time
+ * 
+ * @component
+ * @param {LoginInfoToastProps} props - Component props
+ * @param {Object} props.loginInfo - Login activity information
+ * @param {string} props.loginInfo.currentLogin - ISO timestamp of current login
+ * @param {string} [props.loginInfo.previousLogin] - ISO timestamp of previous login
+ * @param {string} [props.loginInfo.lastLogout] - ISO timestamp of last logout
+ * @param {Function} props.onClose - Callback function when toast is closed
+ * 
+ * @example
+ * return (
+ *   <LoginInfoToast 
+ *     loginInfo={{ 
+ *       currentLogin: '2024-01-15T10:30:00Z',
+ *       previousLogin: '2024-01-14T09:00:00Z'
+ *     }}
+ *     onClose={() => console.log('Toast closed')}
+ *   />
+ * )
+ */
 import React, { useEffect, useState } from 'react';
 import { Clock, LogIn, LogOut, X } from 'lucide-react';
 
+/**
+ * Props interface for LoginInfoToast component
+ */
 interface LoginInfoToastProps {
   loginInfo: {
     currentLogin: string;
@@ -10,11 +54,20 @@ interface LoginInfoToastProps {
   onClose: () => void;
 }
 
+/**
+ * LoginInfoToast Component Implementation
+ */
 const LoginInfoToast: React.FC<LoginInfoToastProps> = ({ loginInfo, onClose }) => {
+  // Visibility state for slide animation
   const [isVisible, setIsVisible] = useState(false);
 
+  /**
+   * Effect hook for animations and auto-close timer
+   * - Triggers slide-in animation after mount
+   * - Sets up 10-second auto-close timer
+   */
   useEffect(() => {
-    // Slide in animation
+    // Slide in animation with slight delay
     setTimeout(() => setIsVisible(true), 100);
 
     // Auto-close after 10 seconds
@@ -25,11 +78,30 @@ const LoginInfoToast: React.FC<LoginInfoToastProps> = ({ loginInfo, onClose }) =
     return () => clearTimeout(timer);
   }, []);
 
+  /**
+   * Handle toast close with slide-out animation
+   * Triggers slide-out animation before calling onClose callback
+   */
   const handleClose = () => {
     setIsVisible(false);
-    setTimeout(onClose, 300); // Wait for slide-out animation
+
+    // Wait for slide-out animation to complete before unmounting
+    setTimeout(onClose, 300);
   };
 
+  /**
+   * Format timestamp to relative time or absolute date
+   * 
+   * Time Display Logic:
+   * - < 1 minute: "Just now"
+   * - < 60 minutes: "X minutes ago"
+   * - < 24 hours: "X hours ago"  
+   * - < 7 days: "X days ago"
+   * - >= 7 days: Full formatted date
+   * 
+   * @param {string} [dateString] - ISO 8601 date string
+   * @returns {string} Formatted time string
+   */
   const formatDateTime = (dateString?: string) => {
     if (!dateString) return 'N/A';
     
