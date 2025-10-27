@@ -1,6 +1,19 @@
+
+/**
+ * Patient Controller
+ *
+ * Handles all patient-related API operations: CRUD, profile updates, and medical history management.
+ *
+ * @module controllers/patientController
+ */
 import { Patient } from '../models/Patient.js';
 
-// Get all patients
+/**
+ * Get all patients
+ * @route GET /api/patients
+ * @access Admin/Doctor only
+ * @returns {Object[]} Array of patient objects (without password)
+ */
 export const getPatients = async (req, res) => {
   try {
     const patients = await Patient.find().select('-password');
@@ -10,7 +23,12 @@ export const getPatients = async (req, res) => {
   }
 };
 
-// Get single patient
+/**
+ * Get single patient by ID
+ * @route GET /api/patients/:id
+ * @access Admin/Doctor/Patient (self)
+ * @returns {Object} Patient object (without password)
+ */
 export const getPatient = async (req, res) => {
   try {
     const patient = await Patient.findById(req.params.id).select('-password');
@@ -23,7 +41,12 @@ export const getPatient = async (req, res) => {
   }
 };
 
-// Update patient profile
+/**
+ * Update patient profile
+ * @route PUT /api/patients/profile
+ * @access Patient (self)
+ * @returns {Object} Updated patient object
+ */
 export const updatePatient = async (req, res) => {
   try {
     const updates = req.body;
@@ -51,7 +74,12 @@ export const updatePatient = async (req, res) => {
   }
 };
 
-// Delete patient
+/**
+ * Delete patient profile
+ * @route DELETE /api/patients/:id
+ * @access Patient (self)
+ * @returns {Object} Success message
+ */
 export const deletePatient = async (req, res) => {
   try {
     const patient = await Patient.findById(req.params.id);
@@ -71,7 +99,12 @@ export const deletePatient = async (req, res) => {
   }
 };
 
-// Update medical history
+/**
+ * Update medical history for patient
+ * @route PUT /api/patients/medical-history
+ * @access Patient (self)
+ * @returns {Object} Updated patient object with medical history
+ */
 export const updateMedicalHistory = async (req, res) => {
   try {
     const { conditions, allergies, medications } = req.body;

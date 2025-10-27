@@ -1,5 +1,27 @@
+
+/**
+ * AuthLog Model
+ *
+ * Mongoose schema for authentication logs and events.
+ * Tracks login, logout, failed attempts, and other auth actions for security monitoring.
+ *
+ * @module models/AuthLog
+ */
 import mongoose from 'mongoose';
 
+/**
+ * AuthLog Schema
+ * @typedef {Object} AuthLog
+ * @property {ObjectId} userId - Reference to user (Doctor, Patient, Admin)
+ * @property {String} userType - Type of user ('Doctor', 'Patient', 'Admin')
+ * @property {String} email - Email used for authentication
+ * @property {String} action - Auth action type (login, logout, failed_login, etc.)
+ * @property {String} ipAddress - IP address of request
+ * @property {String} userAgent - Browser/device info
+ * @property {Boolean} success - Whether action succeeded
+ * @property {String} failureReason - Reason for failure
+ * @property {Object} metadata - Additional event metadata
+ */
 const authLogSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -69,7 +91,12 @@ authLogSchema.index({ action: 1, createdAt: -1 });
 authLogSchema.index({ success: 1, createdAt: -1 });
 authLogSchema.index({ createdAt: -1 });
 
-// Static method to log authentication events
+
+/**
+ * Log authentication event
+ * @param {Object} eventData - Event data to log
+ * @returns {Promise<AuthLog|null>} Saved log or null on error
+ */
 authLogSchema.statics.logEvent = async function (eventData) {
   try {
     const log = new this(eventData);
@@ -82,7 +109,12 @@ authLogSchema.statics.logEvent = async function (eventData) {
   }
 };
 
-// Static method to get logs with pagination
+/**
+ * Get logs with pagination
+ * @param {Object} filters - Query filters
+ * @param {Object} options - Pagination options
+ * @returns {Promise<Object>} Logs and pagination info
+ */
 authLogSchema.statics.getLogs = async function (filters = {}, options = {}) {
   const {
     page = 1,
@@ -114,17 +146,32 @@ authLogSchema.statics.getLogs = async function (filters = {}, options = {}) {
   };
 };
 
-// Static method to get user-specific logs
+/**
+ * Get logs for a specific user
+ * @param {ObjectId} userId - User ID
+ * @param {Object} options - Pagination options
+ * @returns {Promise<Object>} Logs and pagination info
+ */
 authLogSchema.statics.getUserLogs = async function (userId, options = {}) {
   return this.getLogs({ userId }, options);
 };
 
-// Static method to get logs by email (useful for failed login attempts)
+/**
+ * Get logs by email (for failed login attempts)
+ * @param {String} email - Email address
+ * @param {Object} options - Pagination options
+ * @returns {Promise<Object>} Logs and pagination info
+ */
 authLogSchema.statics.getLogsByEmail = async function (email, options = {}) {
   return this.getLogs({ email }, options);
 };
 
-// Static method to get failed login attempts
+/**
+ * Get failed login attempts for an email
+ * @param {String} email - Email address
+ * @param {Number} timeWindow - Minutes to look back
+ * @returns {Promise<AuthLog[]>} Array of failed attempts
+ */
 authLogSchema.statics.getFailedAttempts = async function (email, timeWindow = 15) {
   const cutoffTime = new Date(Date.now() - timeWindow * 60 * 1000);
 
@@ -136,7 +183,12 @@ authLogSchema.statics.getFailedAttempts = async function (email, timeWindow = 15
   }).sort({ createdAt: -1 });
 };
 
-// Static method to get statistics
+/**
+ * Get authentication statistics
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ * @returns {Promise<Object[]>} Array of stats by action
+ */
 authLogSchema.statics.getStats = async function (startDate, endDate) {
   const match = {};
   if (startDate || endDate) {
@@ -167,6 +219,10 @@ authLogSchema.statics.getStats = async function (startDate, endDate) {
   return stats;
 };
 
+
+/**
+ * AuthLog Mongoose Model
+ */
 const AuthLog = mongoose.model('AuthLog', authLogSchema);
 
 export default AuthLog;
