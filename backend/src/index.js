@@ -40,6 +40,7 @@ import cors from 'cors'; // Cross-Origin Resource Sharing middleware
 import dotenv from 'dotenv'; // Environment variable loader
 import cookieParser from 'cookie-parser'; // Cookie parsing middleware for authentication
 import http from 'http'; // HTTP server module
+import path from 'path'; // Path utilities for static file serving
 
 // API route modules
 import authRoutes from './routes/auth.js'; // Authentication endpoints
@@ -47,6 +48,7 @@ import doctorRoutes from './routes/doctors.js'; // Doctor management endpoints
 import patientRoutes from './routes/patients.js'; // Patient management endpoints
 import appointmentRoutes from './routes/appointments.js'; // Appointment booking endpoints
 import adminRoutes from './routes/admin.js'; // Admin management endpoints
+import uploadRoutes from './routes/uploads.js'; // File upload endpoints
 
 // Utilities
 import { startSessionCleanup } from './lib/sessionCleanup.js'; // Session cleanup scheduler
@@ -110,6 +112,14 @@ app.use(express.json());
  * - Required for JWT token extraction from cookies
  */
 app.use(cookieParser());
+
+/**
+ * Static File Serving for Uploads
+ *
+ * Serves files from the 'uploads' directory so that uploaded images can be accessed publicly.
+ * This exposes URLs like /uploads/avatars/<filename>.
+ */
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 /**
  * MongoDB Database Connection
@@ -205,6 +215,13 @@ app.use('/api/patients', patientRoutes);
  * - DELETE /api/appointments/:id - Cancel appointment
  */
 app.use('/api/appointments', appointmentRoutes);
+
+/**
+ * Upload Routes - /api/uploads/*
+ *
+ * Handles file uploads (e.g., avatar images) via multipart/form-data.
+ */
+app.use('/api/uploads', uploadRoutes);
 
 /**
  * Global Error Handling Middleware
