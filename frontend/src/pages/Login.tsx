@@ -96,7 +96,7 @@ const Login = () => {
       // Show OTP verification modal
       setShowOTPModal(true);
       
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Login error:', err);
       
       // Handle suspended account

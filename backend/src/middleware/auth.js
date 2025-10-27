@@ -85,12 +85,18 @@ export const protect = async (req, res, next) => {
   try {
     // Extract JWT token from httpOnly cookie
     const { token } = req.cookies;
+    
+    // Debug logging
+    console.log('🔐 Auth Middleware - Token present:', !!token);
+    console.log('🍪 All cookies:', Object.keys(req.cookies));
+    
     if (!token) {
       return res.status(401).json({ success: false, message: 'missing token' });
     }
 
     // Verify token and extract user information
     const { userId, role } = await verifyToken(token);
+    console.log('✓ Token verified - User:', userId, 'Role:', role);
     let user;
 
     // Fetch user from appropriate collection based on role

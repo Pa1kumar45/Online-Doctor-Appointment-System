@@ -81,7 +81,7 @@ const SignUp = () => {
       // Step 2: Show OTP modal for email verification
       setShowOTPModal(true);
 
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.response?.data?.message || err.message || 'Registration failed');
     } finally {
@@ -125,7 +125,7 @@ const SignUp = () => {
       } else {
         navigate('/'); // Patients go to doctor list
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('OTP verification error:', error);
       throw error; // Let OTPVerification component handle the error display
     }
@@ -147,7 +147,7 @@ const SignUp = () => {
         purpose: 'registration'
       });
       console.log('OTP resent successfully');
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Resend OTP error:', error);
       throw error; // Let OTPVerification component handle the error display
     }

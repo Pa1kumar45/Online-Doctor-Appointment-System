@@ -24,7 +24,7 @@
  * )
  */
 import  { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useApp} from '../context/AppContext';
 
@@ -40,13 +40,15 @@ const Navbar = () => {
 
   // Get current location for active link highlighting
   const location = useLocation();
+  const navigate = useNavigate();
 
   /**
    * Handle user logout
    * Calls logout function from context which clears user data and redirects
    */
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   /**

@@ -33,6 +33,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle2, Loader2, Lock, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { authService } from '../services/auth.service';
+import { useApp } from '../context/AppContext';
 
 /**
  * Form step type definition
@@ -41,6 +42,7 @@ type Step = 'email' | 'otp' | 'password' | 'success';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
+  const { logout, setCurrentUser } = useApp();
   const [step, setStep] = useState<Step>('email');
   const [formData, setFormData] = useState({
     email: '',
@@ -99,7 +101,7 @@ const ForgotPassword = () => {
         role: formData.role
       });
       setStep('otp');
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Send OTP error:', err);
       setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -156,11 +158,16 @@ const ForgotPassword = () => {
         confirmPassword: formData.confirmPassword,
         role: formData.role
       });
+      
+      // Clear any existing session before redirecting to login
+      setCurrentUser(null);
+      await logout();
+      
       setStep('success');
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Reset password error:', err);
       setError(err.message || 'Failed to reset password. Please try again.');
     } finally {
@@ -184,7 +191,7 @@ const ForgotPassword = () => {
       });
       setError('');
       alert('New OTP sent to your email!');
-    } catch (err: unknown) {
+    } catch (err: any) {
       setError(err.message || 'Failed to resend OTP');
     } finally {
       setLoading(false);

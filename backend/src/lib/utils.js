@@ -157,13 +157,15 @@ export const generateToken = async (userId, role, res, req = null) => {
       { expiresIn: '7d' }, // Token valid for 7 days
     );
 
+    // Determine if we're in production based on NODE_ENV
+    const isProduction = process.env.NODE_ENV === 'production';
+
     // Set secure httpOnly cookie with token
     res.cookie('token', token, {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
       httpOnly: true, // Prevent XSS attacks
       sameSite: 'strict', // CSRF protection
-      // secure: false, // Development setting
-      secure: true, // Production: HTTPS only
+      secure: isProduction, // HTTPS only in production, HTTP allowed in development
     });
 
     // Create session record in database if req object is provided
