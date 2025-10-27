@@ -1,5 +1,13 @@
 import mongoose from 'mongoose';
 
+/**
+ * Session Model
+ *
+ * Mongoose schema for user sessions (multi-device, single device enforcement).
+ * Tracks session tokens, device info, activity, and expiration.
+ *
+ * @module models/Session
+ */
 const sessionSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -59,6 +67,7 @@ const sessionSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+
 // Compound index for efficient user session queries
 sessionSchema.index({ userId: 1, isActive: 1, expiresAt: 1 });
 
@@ -66,7 +75,9 @@ sessionSchema.index({ userId: 1, isActive: 1, expiresAt: 1 });
 sessionSchema.index({ expiresAt: 1, isActive: 1 });
 
 /**
- * Static method to create a new session
+ * Create a new session
+ * @param {Object} sessionData - Data for new session
+ * @returns {Promise<Session>} Created session
  */
 sessionSchema.statics.createSession = async function (sessionData) {
   try {
@@ -80,7 +91,10 @@ sessionSchema.statics.createSession = async function (sessionData) {
 };
 
 /**
- * Static method to get user's active sessions
+ * Get user's active sessions
+ * @param {ObjectId} userId - User ID
+ * @param {String} userType - User type
+ * @returns {Promise<Session[]>} Array of active sessions
  */
 sessionSchema.statics.getUserSessions = async function (userId, userType) {
   try {
@@ -101,7 +115,9 @@ sessionSchema.statics.getUserSessions = async function (userId, userType) {
 };
 
 /**
- * Static method to find session by token
+ * Find session by token
+ * @param {String} token - Session token
+ * @returns {Promise<Session|null>} Session or null
  */
 sessionSchema.statics.findByToken = async function (token) {
   try {
@@ -117,7 +133,9 @@ sessionSchema.statics.findByToken = async function (token) {
 };
 
 /**
- * Static method to update session activity
+ * Update session activity timestamp
+ * @param {String} token - Session token
+ * @returns {Promise<void>}
  */
 sessionSchema.statics.updateActivity = async function (token) {
   try {
@@ -132,7 +150,10 @@ sessionSchema.statics.updateActivity = async function (token) {
 };
 
 /**
- * Static method to revoke a specific session
+ * Revoke a specific session
+ * @param {ObjectId} sessionId - Session ID
+ * @param {ObjectId} userId - User ID
+ * @returns {Promise<Session|null>} Revoked session or null
  */
 sessionSchema.statics.revokeSession = async function (sessionId, userId) {
   try {
@@ -149,7 +170,10 @@ sessionSchema.statics.revokeSession = async function (sessionId, userId) {
 };
 
 /**
- * Static method to revoke all user sessions except current
+ * Revoke all user sessions except current
+ * @param {ObjectId} userId - User ID
+ * @param {String} exceptToken - Token to exclude
+ * @returns {Promise<Object>} Update result
  */
 sessionSchema.statics.revokeAllSessions = async function (userId, exceptToken = null) {
   try {
@@ -175,10 +199,9 @@ sessionSchema.statics.revokeAllSessions = async function (userId, exceptToken = 
 };
 
 /**
- * Static method to enforce single device login
- * Revokes ALL existing sessions for a user when they log in from a new device
+ * Enforce single device login
+ * Revokes all existing sessions for a user when logging in from a new device
  * Used for FR-1.4 Single Device Login Enforcement
- *
  * @param {ObjectId} userId - User's ID
  * @param {String} userType - User type ('Doctor', 'Patient', 'Admin')
  * @returns {Object} Result with count of revoked sessions
@@ -219,7 +242,8 @@ sessionSchema.statics.enforceSingleDevice = async function (userId, userType) {
 };
 
 /**
- * Static method to clean up expired sessions
+ * Clean up expired sessions
+ * @returns {Promise<Object>} Update result
  */
 sessionSchema.statics.cleanupExpired = async function () {
   try {
@@ -240,7 +264,9 @@ sessionSchema.statics.cleanupExpired = async function () {
 };
 
 /**
- * Static method to delete old inactive sessions (for database maintenance)
+ * Delete old inactive sessions (for database maintenance)
+ * @param {Number} daysOld - Days threshold
+ * @returns {Promise<Object>} Delete result
  */
 sessionSchema.statics.deleteOldSessions = async function (daysOld = 30) {
   try {
@@ -261,14 +287,16 @@ sessionSchema.statics.deleteOldSessions = async function (daysOld = 30) {
 };
 
 /**
- * Instance method to check if session is valid
+ * Check if session is valid
+ * @returns {Boolean} True if valid
  */
 sessionSchema.methods.isValid = function () {
   return this.isActive && this.expiresAt > new Date();
 };
 
 /**
- * Instance method to get session duration
+ * Get session duration
+ * @returns {String} Duration string
  */
 sessionSchema.methods.getDuration = function () {
   const now = new Date();
@@ -286,6 +314,10 @@ sessionSchema.methods.getDuration = function () {
   return `${durationMinutes} minute${durationMinutes > 1 ? 's' : ''} ago`;
 };
 
+
+/**
+ * Session Mongoose Model
+ */
 const Session = mongoose.model('Session', sessionSchema);
 
 export default Session;

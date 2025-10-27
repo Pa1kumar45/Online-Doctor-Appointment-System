@@ -7,8 +7,12 @@ import AuthLog from '../models/AuthLog.js';
 
 /**
  * Get dashboard statistics
+ *
+ * Returns user, appointment, and recent activity stats for admin dashboard.
+ *
  * @route GET /api/admin/dashboard/stats
  * @access Admin only
+ * @returns {Object} Dashboard statistics
  */
 const getDashboardStats = async (req, res) => {
   try {
@@ -75,8 +79,12 @@ const getDashboardStats = async (req, res) => {
 
 /**
  * Get all users with filtering and pagination
+ *
+ * Returns paginated list of users (doctors, patients) with filters for role, status, verification, and search.
+ *
  * @route GET /api/admin/users
  * @access Admin only
+ * @returns {Object[]} Array of user objects
  */
 const getAllUsers = async (req, res) => {
   try {
@@ -190,8 +198,12 @@ const getAllUsers = async (req, res) => {
 
 /**
  * Verify/Update user status
+ *
+ * Updates verification status for a user (doctor/patient).
+ *
  * @route PUT /api/admin/users/:id/verify
  * @access Admin only
+ * @returns {Object} Updated user object
  */
 const verifyUser = async (req, res) => {
   try {
@@ -264,6 +276,12 @@ const verifyUser = async (req, res) => {
 
 /**
  * Cancel future appointments for suspended user
+ *
+ * Cancels all pending/confirmed future appointments for a suspended doctor or patient.
+ *
+ * @param {String} userId - User ID
+ * @param {String} userType - 'doctor' or 'patient'
+ * @returns {Promise<void>}
  */
 const cancelFutureAppointments = async (userId, userType) => {
   const query = userType === 'doctor' ? { doctorId: userId } : { patientId: userId };
@@ -284,8 +302,12 @@ const cancelFutureAppointments = async (userId, userType) => {
 
 /**
  * Suspend/Activate user account
+ *
+ * Toggles active status for a user (doctor/patient), suspending or reactivating account.
+ *
  * @route PUT /api/admin/users/:id/toggle-status
  * @access Admin only
+ * @returns {Object} Updated user object
  */
 const toggleUserStatus = async (req, res) => {
   try {
@@ -349,8 +371,12 @@ const toggleUserStatus = async (req, res) => {
 
 /**
  * Update user role (for role management)
+ *
+ * Changes role for a user (doctor, patient, admin) by super admin.
+ *
  * @route PUT /api/admin/users/:id/role
  * @access Super Admin only
+ * @returns {Object} Updated user object
  */
 const updateUserRole = async (req, res) => {
   try {
@@ -407,8 +433,12 @@ const updateUserRole = async (req, res) => {
 
 /**
  * Get admin action logs
+ *
+ * Returns logs of all admin actions for audit and compliance.
+ *
  * @route GET /api/admin/logs
  * @access Admin only
+ * @returns {Object[]} Array of admin action logs
  */
 const getAdminLogs = async (req, res) => {
   try {
@@ -460,9 +490,12 @@ const getAdminLogs = async (req, res) => {
 
 /**
  * Get authentication logs
+ *
+ * Returns all authentication logs with filtering and pagination.
+ *
  * @route GET /api/admin/auth-logs
  * @access Admin only
- * @description Get all authentication logs with filtering and pagination
+ * @returns {Object[]} Array of authentication logs
  */
 const getAuthLogs = async (req, res) => {
   try {
@@ -531,9 +564,12 @@ const getAuthLogs = async (req, res) => {
 
 /**
  * Get authentication logs for a specific user
+ *
+ * Returns all authentication logs for a specific user.
+ *
  * @route GET /api/admin/auth-logs/user/:userId
  * @access Admin only
- * @description Get all authentication logs for a specific user
+ * @returns {Object[]} Array of authentication logs
  */
 const getUserAuthLogs = async (req, res) => {
   try {
@@ -568,9 +604,12 @@ const getUserAuthLogs = async (req, res) => {
 
 /**
  * Get authentication logs by email
+ *
+ * Returns all authentication logs for a specific email (useful for failed login attempts).
+ *
  * @route GET /api/admin/auth-logs/email/:email
  * @access Admin only
- * @description Get all authentication logs for a specific email (useful for failed login attempts)
+ * @returns {Object[]} Array of authentication logs
  */
 const getAuthLogsByEmail = async (req, res) => {
   try {
@@ -605,9 +644,12 @@ const getAuthLogsByEmail = async (req, res) => {
 
 /**
  * Get authentication statistics
+ *
+ * Returns authentication statistics and analytics for security monitoring.
+ *
  * @route GET /api/admin/auth-logs/stats
  * @access Admin only
- * @description Get authentication statistics and analytics
+ * @returns {Object} Authentication statistics
  */
 const getAuthStats = async (req, res) => {
   try {
@@ -682,9 +724,12 @@ const getAuthStats = async (req, res) => {
 
 /**
  * Get failed login attempts for security monitoring
+ *
+ * Returns recent failed login attempts for security monitoring.
+ *
  * @route GET /api/admin/auth-logs/failed-attempts
  * @access Admin only
- * @description Get recent failed login attempts for security monitoring
+ * @returns {Object[]} Array of failed login attempts
  */
 const getFailedLoginAttempts = async (req, res) => {
   try {
