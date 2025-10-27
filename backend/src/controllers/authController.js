@@ -20,6 +20,7 @@ import { Doctor } from '../models/Doctor.js';
 import { Patient } from '../models/Patient.js';
 import Admin from '../models/Admin.js';
 import OTP from '../models/OTP.js';
+import Session from '../models/Session.js';
 import {
   sendOTPEmail,
   sendWelcomeEmail,
@@ -762,7 +763,6 @@ export const logout = async (req, res) => {
 
     // Revoke session in database if token exists
     if (token) {
-      const Session = (await import('../models/Session')).default;
       await Session.updateOne(
         { token, isActive: true },
         { isActive: false },
@@ -771,8 +771,25 @@ export const logout = async (req, res) => {
     }
 
     // Clear the JWT token cookie by setting it to empty with maxAge 0
-    // This immediately expires the cookie on the client side
-    res.cookie('token', '', { maxAge: 0 });
+    // Must use same options as when cookie was set for proper clearing
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Clear with current environment settings
+    res.cookie('token', '', {
+      maxAge: 0,
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: isProduction,
+    });
+
+    // Also try to clear with opposite secure setting (for cookies set with different env)
+    // This handles cases where cookie was set with secure:true but now in development
+    res.cookie('token', '', {
+      maxAge: 0,
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: !isProduction,
+    });
 
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (err) {

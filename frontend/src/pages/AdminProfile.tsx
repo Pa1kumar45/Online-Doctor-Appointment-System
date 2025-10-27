@@ -21,6 +21,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Mail, Shield } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ChangePasswordForm from '../components/ChangePasswordForm';
@@ -37,7 +38,8 @@ interface AdminFormData {
 }
 
 const AdminProfile = () => {
-  const { currentUser, setCurrentUser } = useApp();
+  const { currentUser, setCurrentUser, logout } = useApp();
+  const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -219,9 +221,13 @@ const AdminProfile = () => {
       {/* Change Password Section */}
       <div className="mt-8">
         <ChangePasswordForm 
-          onSuccess={() => {
-            setSuccess('Password changed successfully! Please use your new password for future logins.');
-            setTimeout(() => setSuccess(null), 5000);
+          onSuccess={async () => {
+            setSuccess('Password changed successfully! Redirecting to login...');
+            // Logout and redirect to login page
+            setTimeout(async () => {
+              await logout();
+              navigate('/login');
+            }, 2000);
           }}
         />
       </div>

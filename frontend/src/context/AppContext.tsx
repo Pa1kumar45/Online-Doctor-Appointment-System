@@ -144,8 +144,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
      * User logout function - clears user state and calls logout API
      */
     const logout = useCallback(async () => {
-        setCurrentUser(null);
-        await axios.post('/auth/logout');
+        try {
+            // Call logout API first to clear cookie and revoke session
+            await axios.post('/auth/logout');
+        } catch (error) {
+            console.error('Logout API error:', error);
+            // Continue with logout even if API fails
+        } finally {
+            // Always clear user state locally
+            setCurrentUser(null);
+        }
     }, []);
 
     /**

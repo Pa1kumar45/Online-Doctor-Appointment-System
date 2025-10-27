@@ -107,12 +107,19 @@ const App: React.FC = () => {
        */
       const fetchCurrentUser = async () => {
         try {
+          console.log('🔍 Fetching current user...');
           const response = await getCurrentUser() as GetCurrentUserResponse;
           if (response?.data?.data) {
+            console.log('✅ User session found:', response.data.data.role);
             setCurrentUser(response.data.data);
+          } else {
+            console.log('❌ No user data in response');
+            setCurrentUser(null);
           }
         } catch (error) {
-          console.error('Error fetching current user:', error);
+          // Session invalid or expired - user will see public pages
+          console.log('❌ No active session found, clearing user state');
+          setCurrentUser(null);
         }
       };
       
@@ -146,7 +153,7 @@ const App: React.FC = () => {
           <Route path="/signup" element={!currentUser ? <SignUp /> : <Navigate to="/" />} />
           <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/" />} />
           <Route path="/admin/login" element={!currentUser ? <AdminLogin /> : <Navigate to="/admin" />} />
-          <Route path="/forgot-password" element={!currentUser ? <ForgotPassword /> : <Navigate to="/" />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/doctor/:id" element={<DoctorPage />} />
           <Route path="/doctors" element={<DoctorList />} />
 
