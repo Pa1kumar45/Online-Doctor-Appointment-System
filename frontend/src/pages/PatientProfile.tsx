@@ -28,13 +28,14 @@
  * )
  */
 
-import React, { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Phone, Droplet, AlertCircle, Plus, Trash2, Image } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Mail, Calendar, Phone, Droplet, AlertCircle, Plus, Trash2, Image, Upload } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import { Patient, EmergencyContact } from '../types/index.ts';
 import { apiService } from '../services/api.service';
 import { useApp } from '../context/AppContext';
+import { uploadService } from '../services/upload.service';
 
 /**
  * Form data interface for patient profile
@@ -108,6 +109,9 @@ const PatientProfile = () => {
     contactNumber: '',
     emergencyContact: []
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   /**
    * Fetch and initialize patient profile data
@@ -286,6 +290,32 @@ const PatientProfile = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!formData) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    try {
+      setIsUploading(true);
+      const url = await uploadService.uploadAvatar(file);
+      setFormData(prev => ({ ...prev!, avatar: url }));
+      setSuccess('Profile picture uploaded. Don\'t forget to save changes.');
+    } catch (err: unknown) {
+      console.error('Avatar upload failed:', err);
+      setUploadError('Failed to upload image. Please try a different file.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    if (!formData) return;
+    setUploadError(null);
+    setFormData(prev => ({ ...prev!, avatar: '' }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setSuccess('Profile picture removed. Don\'t forget to save changes.');
   };
 
   if (isLoading) {
@@ -469,16 +499,40 @@ const PatientProfile = () => {
 
                 <div>
                   <label className="  text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Image size={18} className="text-blue-500" /> Profile Picture URL
+                    <Image size={18} className="text-blue-500" /> Profile Picture
                   </label>
                   <input
-                    type="url"
-                    name="avatar"
-                    value={formData?.avatar}
-                    onChange={handleChange}
-                    placeholder="Enter image URL"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
+                    id="patient-avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileChange}
+                    className="hidden"
+                    ref={fileInputRef}
                   />
+                  <div className="flex items-center gap-3">
+                    <label
+                      htmlFor="patient-avatar"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+                    >
+                      <Upload size={16} />
+                      Upload image
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={!formData?.avatar || isUploading}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                  {isUploading && (
+                    <p className="mt-2 text-sm text-blue-600 dark:text-blue-400">Uploading image...</p>
+                  )}
+                  {uploadError && (
+                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</p>
+                  )}
+                  
                 </div>
               </div>
             </div>
