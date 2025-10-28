@@ -52,6 +52,7 @@ import uploadRoutes from './routes/uploads.js'; // File upload endpoints
 
 // Utilities
 import { startSessionCleanup } from './lib/sessionCleanup.js'; // Session cleanup scheduler
+import { startAppointmentReminderScheduler } from './lib/appointmentReminder.js'; // Appointment reminder scheduler
 
 // Create Express app and HTTP server
 const app = express();
@@ -149,6 +150,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medical_a
     console.log('Connected to MongoDB');
     // Start session cleanup scheduler (runs every hour)
     startSessionCleanup(60);
+    // Start appointment reminder scheduler (runs every minute)
+    startAppointmentReminderScheduler(1);
   })
   .catch((err) => console.error('MongoDB connection error:', err));
 

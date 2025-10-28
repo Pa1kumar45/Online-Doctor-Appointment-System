@@ -14,7 +14,9 @@
 
 import { Appointment } from '../models/Appointment.js';
 import { Doctor } from '../models/Doctor.js';
+import { Patient } from '../models/Patient.js';
 import { FIXED_TIME_SLOTS } from '../utils/timeSlots.js';
+import { sendAppointmentAcceptanceEmail } from '../services/emailService.js';
 
 /**
  * Get available slots for a doctor on a specific date
@@ -326,9 +328,14 @@ export const updateAppointment = async (req, res) => {
     console.log('updateAppointment:hit');
 
     const appointment = await Appointment.findById(req.params.id);
+    
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
+
+    // Get doctor and patient details separately
+    const doctor = await Doctor.findById(appointment.doctorId);
+    const patient = await Patient.findById(appointment.patientId);
 
     // Authorization: Only doctor or patient involved can update appointment
     if (appointment.doctorId.toString() !== req.user._id.toString()
@@ -337,6 +344,7 @@ export const updateAppointment = async (req, res) => {
     }
 
     const updates = req.body;
+    const oldStatus = appointment.status;
 
     // Apply all provided updates to the appointment
     Object.keys(updates).forEach((key) => {
@@ -346,14 +354,59 @@ export const updateAppointment = async (req, res) => {
     // Save updated appointment
     await appointment.save();
 
-    // Populate doctor and patient information for response
-    const populatedAppointment = await appointment.populate([
-      { path: 'doctorId', select: 'name specialization' },
-      { path: 'patientId', select: 'name' },
-    ]);
+    // If status changed from 'pending' to 'scheduled', send acceptance email
+    if (oldStatus === 'pending' && appointment.status === 'scheduled') {
+      console.log('📧 Sending appointment acceptance email...');
+      console.log('Patient Data:', {
+        id: patient._id,
+        name: patient.name,
+        email: patient.email
+      });
+      console.log('Doctor Data:', {
+        id: doctor._id,
+        name: doctor.name,
+        specialization: doctor.specialization
+      });
+      
+      // Format date for email
+      const dateObj = new Date(appointment.date);
+      const formattedDate = dateObj.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Send acceptance email to patient
+      try {
+        if (!patient.email) {
+          console.error('❌ Patient email is undefined!');
+          throw new Error('Patient email not found');
+        }
+        
+        await sendAppointmentAcceptanceEmail({
+          patientEmail: patient.email,
+          patientName: patient.name,
+          doctorName: doctor.name,
+          doctorSpecialization: doctor.specialization,
+          appointmentDate: formattedDate,
+          appointmentTime: `${appointment.startTime} - ${appointment.endTime}`,
+        });
+        console.log('✅ Appointment acceptance email sent successfully to:', patient.email);
+      } catch (emailError) {
+        console.error('❌ Error sending appointment acceptance email:', emailError.message);
+        // Don't fail the request if email fails - appointment is still updated
+      }
+    }
+
+    // Populate again for final response
+    const populatedAppointment = await Appointment.findById(appointment._id)
+      .populate('doctorId', 'name specialization')
+      .populate('patientId', 'name');
 
     res.json(populatedAppointment);
   } catch (error) {
+    console.error('Error updating appointment:', error);
     res.status(500).json({ message: 'Error updating appointment' });
   }
 };

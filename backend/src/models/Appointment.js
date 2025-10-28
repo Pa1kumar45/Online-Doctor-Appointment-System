@@ -91,6 +91,12 @@ const appointmentSchema = new mongoose.Schema({
     required: false, // Patient's written review of the appointment
     trim: true,
   },
+
+  // Reminder tracking
+  reminderSent: {
+    type: Boolean,
+    default: false, // Track if reminder email has been sent
+  },
 }, {
   timestamps: true, // Automatically add createdAt and updatedAt fields
 });
