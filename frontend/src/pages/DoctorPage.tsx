@@ -85,8 +85,9 @@ const DoctorPage: React.FC = () => {
       const doctorData = await doctorService.getDoctorById(id!);
       console.log("Doctor data:", doctorData);
       setDoctor(doctorData);
-    } catch {
-      setError('Failed to load doctor details');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to load doctor details';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -108,10 +109,11 @@ const DoctorPage: React.FC = () => {
       console.log("Available slots:", slotsData);
       setAvailableSlots(slotsData.availableSlots || []);
       setSelectedSlot(null); // Reset selected slot when date changes
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch available slots:', err);
       setAvailableSlots([]);
-      setError('No available slots for this date');
+      const errorMessage = err.response?.data?.message || 'No available slots for this date';
+      setError(errorMessage);
     } finally {
       setIsFetchingSlots(false);
     }

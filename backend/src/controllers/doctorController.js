@@ -31,9 +31,9 @@ import { Doctor } from '../models/Doctor.js';
  */
 export const getDoctors = async (req, res) => {
   try {
-    // Retrieve all doctors with selected public fields only
+    // Retrieve only active (non-suspended) doctors with selected public fields
     // Password is excluded for security, specific fields are selected for optimization
-    const doctors = await Doctor.find()
+    const doctors = await Doctor.find({ isActive: true })
       .select('-password') // Exclude password field
       .select('name email specialization experience qualification about contactNumber avatar schedule');
 
@@ -69,6 +69,11 @@ export const getDoctor = async (req, res) => {
     // Handle case where doctor doesn't exist
     if (!doctor) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+
+    // Check if doctor account is suspended
+    if (!doctor.isActive) {
+      return res.status(403).json({ success: false, message: 'This doctor account is currently suspended' });
     }
 
     res.json(doctor);

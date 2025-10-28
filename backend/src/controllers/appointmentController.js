@@ -68,6 +68,11 @@ export const getAvailableSlots = async (req, res) => {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
+    // Check if doctor account is suspended
+    if (!doctor.isActive) {
+      return res.status(403).json({ message: 'This doctor account is currently suspended and not available for appointments' });
+    }
+
     // Get the day of week for the requested date
     const dateObj = new Date(`${date}T00:00:00`);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -242,6 +247,12 @@ export const createAppointment = async (req, res) => {
     if (!doctor) {
       console.log('Doctor not found');
       return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    // Check if doctor account is suspended
+    if (!doctor.isActive) {
+      console.log('Doctor account is suspended');
+      return res.status(403).json({ message: 'This doctor account is currently suspended and not available for appointments' });
     }
 
     // Authorization: Only patients can create appointments
