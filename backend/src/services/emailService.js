@@ -686,6 +686,431 @@ export const sendPasswordChangedEmail = async ({ email, name }) => {
 };
 
 /**
+ * Send appointment acceptance email to patient
+ * @param {Object} options - Email options
+ * @param {String} options.patientEmail - Patient's email
+ * @param {String} options.patientName - Patient's name
+ * @param {String} options.doctorName - Doctor's name
+ * @param {String} options.doctorSpecialization - Doctor's specialization
+ * @param {String} options.appointmentDate - Appointment date
+ * @param {String} options.appointmentTime - Appointment time
+ * @returns {Promise<Object>} { success: Boolean, message: String }
+ */
+export const sendAppointmentAcceptanceEmail = async ({
+  patientEmail,
+  patientName,
+  doctorName,
+  doctorSpecialization,
+  appointmentDate,
+  appointmentTime,
+}) => {
+  if (!transporter) {
+    console.error('❌ Email service not configured');
+    return {
+      success: false,
+      message: 'Email service not configured',
+    };
+  }
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          background-color: #f4f4f4;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 40px auto;
+          background-color: #ffffff;
+          border-radius: 10px;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          overflow: hidden;
+        }
+        .header {
+          background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+          color: white;
+          padding: 40px 30px;
+          text-align: center;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 28px;
+          font-weight: 600;
+        }
+        .content {
+          padding: 40px 30px;
+        }
+        .content p {
+          font-size: 16px;
+          margin: 15px 0;
+          color: #555;
+        }
+        .success-box {
+          background-color: #d4edda;
+          border-left: 4px solid #28a745;
+          padding: 20px;
+          margin: 25px 0;
+          border-radius: 4px;
+          text-align: center;
+        }
+        .success-icon {
+          font-size: 48px;
+          margin-bottom: 10px;
+        }
+        .appointment-details {
+          background-color: #f8f9fa;
+          padding: 25px;
+          border-radius: 8px;
+          margin: 25px 0;
+        }
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 0;
+          border-bottom: 1px solid #e0e0e0;
+        }
+        .detail-row:last-child {
+          border-bottom: none;
+        }
+        .detail-label {
+          font-weight: 600;
+          color: #666;
+        }
+        .detail-value {
+          color: #333;
+          text-align: right;
+        }
+        .info-box {
+          background-color: #e3f2fd;
+          border-left: 4px solid #2196f3;
+          padding: 15px;
+          margin: 25px 0;
+          border-radius: 4px;
+        }
+        .info-box p {
+          margin: 5px 0;
+          font-size: 14px;
+          color: #1565c0;
+        }
+        .footer {
+          background-color: #f8f9fa;
+          padding: 30px;
+          text-align: center;
+          color: #666;
+          font-size: 14px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>✅ Appointment Confirmed!</h1>
+        </div>
+        
+        <div class="content">
+          <p>Dear <strong>${patientName}</strong>,</p>
+          
+          <div class="success-box">
+            <div class="success-icon">🎉</div>
+            <p style="margin: 0; font-size: 18px; font-weight: 600; color: #28a745;">
+              Your appointment request has been accepted!
+            </p>
+          </div>
+          
+          <p>Great news! Dr. ${doctorName} has accepted your appointment request.</p>
+          
+          <div class="appointment-details">
+            <h3 style="margin-top: 0; color: #333;">📋 Appointment Details</h3>
+            <div class="detail-row">
+              <span class="detail-label">Doctor:</span>
+              <span class="detail-value">Dr. ${doctorName}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Specialization:</span>
+              <span class="detail-value">${doctorSpecialization}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Date:</span>
+              <span class="detail-value">${appointmentDate}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Time:</span>
+              <span class="detail-value">${appointmentTime}</span>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <p><strong>📌 Important Reminders:</strong></p>
+            <p>• You will receive a reminder 15 minutes before your appointment</p>
+            <p>• Please be available at the scheduled time</p>
+            <p>• Prepare any questions you want to discuss with the doctor</p>
+          
+          </div>
+          
+          <p>We look forward to seeing you!</p>
+          
+          <p>Best regards,<br><strong>HealthConnect Team</strong></p>
+        </div>
+        
+        <div class="footer">
+          <p><strong>HealthConnect - Your Online Doctor Appointment System</strong></p>
+          <p>This is an automated email, please do not reply.</p>
+          <p>© 2025 HealthConnect. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from: {
+      name: 'HealthConnect',
+      address: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    },
+    to: patientEmail,
+    subject: '✅ Appointment Confirmed - HealthConnect',
+    html: htmlContent,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Appointment acceptance email sent to ${patientEmail}: ${info.messageId}`);
+    return {
+      success: true,
+      message: 'Appointment acceptance email sent successfully',
+      info,
+    };
+  } catch (error) {
+    console.error('❌ Error sending appointment acceptance email:', error);
+    return {
+      success: false,
+      message: 'Failed to send appointment acceptance email',
+      error: error.message,
+    };
+  }
+};
+
+/**
+ * Send appointment reminder email to patient (15 minutes before)
+ * @param {Object} options - Email options
+ * @param {String} options.patientEmail - Patient's email
+ * @param {String} options.patientName - Patient's name
+ * @param {String} options.doctorName - Doctor's name
+ * @param {String} options.doctorSpecialization - Doctor's specialization
+ * @param {String} options.appointmentDate - Appointment date
+ * @param {String} options.appointmentTime - Appointment time
+ * @returns {Promise<Object>} { success: Boolean, message: String }
+ */
+export const sendAppointmentReminderEmail = async ({
+  patientEmail,
+  patientName,
+  doctorName,
+  doctorSpecialization,
+  appointmentDate,
+  appointmentTime,
+}) => {
+  if (!transporter) {
+    console.error('❌ Email service not configured');
+    return {
+      success: false,
+      message: 'Email service not configured',
+    };
+  }
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          background-color: #f4f4f4;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 40px auto;
+          background-color: #ffffff;
+          border-radius: 10px;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          overflow: hidden;
+        }
+        .header {
+          background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+          color: white;
+          padding: 40px 30px;
+          text-align: center;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 28px;
+          font-weight: 600;
+        }
+        .content {
+          padding: 40px 30px;
+        }
+        .content p {
+          font-size: 16px;
+          margin: 15px 0;
+          color: #555;
+        }
+        .reminder-box {
+          background-color: #fff3e0;
+          border-left: 4px solid #ff9800;
+          padding: 20px;
+          margin: 25px 0;
+          border-radius: 4px;
+          text-align: center;
+        }
+        .reminder-icon {
+          font-size: 48px;
+          margin-bottom: 10px;
+        }
+        .appointment-details {
+          background-color: #f8f9fa;
+          padding: 25px;
+          border-radius: 8px;
+          margin: 25px 0;
+        }
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 0;
+          border-bottom: 1px solid #e0e0e0;
+        }
+        .detail-row:last-child {
+          border-bottom: none;
+        }
+        .detail-label {
+          font-weight: 600;
+          color: #666;
+        }
+        .detail-value {
+          color: #333;
+          text-align: right;
+        }
+        .urgent-box {
+          background-color: #ffebee;
+          border-left: 4px solid #f44336;
+          padding: 15px;
+          margin: 25px 0;
+          border-radius: 4px;
+        }
+        .urgent-box p {
+          margin: 5px 0;
+          font-size: 14px;
+          color: #c62828;
+          font-weight: 600;
+        }
+        .footer {
+          background-color: #f8f9fa;
+          padding: 30px;
+          text-align: center;
+          color: #666;
+          font-size: 14px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>⏰ Appointment Reminder</h1>
+        </div>
+        
+        <div class="content">
+          <p>Dear <strong>${patientName}</strong>,</p>
+          
+          <div class="reminder-box">
+            <div class="reminder-icon">🔔</div>
+            <p style="margin: 0; font-size: 18px; font-weight: 600; color: #e65100;">
+              Your appointment is starting in 15 minutes!
+            </p>
+          </div>
+          
+          <p>This is a friendly reminder about your upcoming appointment with Dr. ${doctorName}.</p>
+          
+          <div class="appointment-details">
+            <h3 style="margin-top: 0; color: #333;">📋 Appointment Details</h3>
+            <div class="detail-row">
+              <span class="detail-label">Doctor:</span>
+              <span class="detail-value">Dr. ${doctorName}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Specialization:</span>
+              <span class="detail-value">${doctorSpecialization}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Date:</span>
+              <span class="detail-value">${appointmentDate}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Time:</span>
+              <span class="detail-value">${appointmentTime}</span>
+            </div>
+          </div>
+          
+          <div class="urgent-box">
+            <p>⚠️ Please be ready for your appointment!</p>
+          </div>
+          
+          <p>Please ensure you are available at the scheduled time.</p>
+          
+          <p>Best regards,<br><strong>HealthConnect Team</strong></p>
+        </div>
+        
+        <div class="footer">
+          <p><strong>HealthConnect - Your Online Doctor Appointment System</strong></p>
+          <p>This is an automated email, please do not reply.</p>
+          <p>© 2025 HealthConnect. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from: {
+      name: 'HealthConnect',
+      address: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    },
+    to: patientEmail,
+    subject: '⏰ Appointment Reminder - Starting in 15 Minutes - HealthConnect',
+    html: htmlContent,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Appointment reminder email sent to ${patientEmail}: ${info.messageId}`);
+    return {
+      success: true,
+      message: 'Appointment reminder email sent successfully',
+      info,
+    };
+  } catch (error) {
+    console.error('❌ Error sending appointment reminder email:', error);
+    return {
+      success: false,
+      message: 'Failed to send appointment reminder email',
+      error: error.message,
+    };
+  }
+};
+
+/**
  * Verify email service configuration (for testing)
  * @returns {Promise<Object>} { configured: Boolean, message: String }
  */
@@ -716,5 +1141,7 @@ export default {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
+  sendAppointmentAcceptanceEmail,
+  sendAppointmentReminderEmail,
   verifyEmailService,
 };
