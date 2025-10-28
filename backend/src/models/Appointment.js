@@ -42,9 +42,9 @@ const appointmentSchema = new mongoose.Schema({
   },
   slotNumber: {
     type: Number,
-    required: true, // Which slot (1-12) corresponding to 9 AM - 9 PM
+    required: true, // Which slot (1-96) corresponding to 9 AM - 9 PM in 15-min intervals
     min: 1,
-    max: 12,
+    max: 96,
   },
   startTime: {
     type: String,
@@ -52,7 +52,7 @@ const appointmentSchema = new mongoose.Schema({
   },
   endTime: {
     type: String,
-    required: true, // Appointment end time (format: HH:MM, always 1 hour after start)
+    required: true, // Appointment end time (format: HH:MM, always 15 minutes after start)
   },
 
   // Appointment management

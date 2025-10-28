@@ -115,12 +115,12 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
       case 'verify':
         return [
           { value: 'verified', label: 'Approve (Verified)', color: 'text-green-600' },
-          { value: 'rejected', label: 'Reject', color: 'text-red-600' },
+          { value: 'rejected', label: 'Reject and Deactivate Account', color: 'text-red-600' },
           { value: 'under_review', label: 'Mark Under Review', color: 'text-blue-600' }
         ];
       case 'status':
         return user.isActive 
-          ? [{ value: 'suspend', label: 'Suspend Account', color: 'text-red-600' }]
+          ? [{ value: 'suspend', label: 'Deactivate Account', color: 'text-red-600' }]
           : [{ value: 'activate', label: 'Activate Account', color: 'text-green-600' }];
       default:
         return [];

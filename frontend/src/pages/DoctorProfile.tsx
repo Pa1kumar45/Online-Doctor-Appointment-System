@@ -34,12 +34,14 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Calendar, Clock, GraduationCap, Briefcase, Phone, Image, Upload } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ChangePasswordForm from '../components/ChangePasswordForm';
+import TimeBlockSelector from '../components/TimeBlockSelector';
 import { Schedule, Doctor } from '../types/index.ts';
 
 import { useApp } from '../context/AppContext';
 
 import { doctorService } from '../services/doctor.service';
 import { uploadService } from '../services/upload.service';
+import { FIXED_TIME_SLOTS } from '../utils/timeSlots';
 
 /**
  * Form data interface for doctor profile
@@ -55,25 +57,6 @@ interface DoctorFormData {
   contactNumber: string;
   schedule: Schedule[];
 }
-
-/**
- * Fixed 12 time slots from 9 AM to 9 PM (1 hour each)
- * These are the available booking slots for patients
- */
-const FIXED_TIME_SLOTS = [
-  { slotNumber: 1, startTime: '09:00', endTime: '10:00' },
-  { slotNumber: 2, startTime: '10:00', endTime: '11:00' },
-  { slotNumber: 3, startTime: '11:00', endTime: '12:00' },
-  { slotNumber: 4, startTime: '12:00', endTime: '13:00' },
-  { slotNumber: 5, startTime: '13:00', endTime: '14:00' },
-  { slotNumber: 6, startTime: '14:00', endTime: '15:00' },
-  { slotNumber: 7, startTime: '15:00', endTime: '16:00' },
-  { slotNumber: 8, startTime: '16:00', endTime: '17:00' },
-  { slotNumber: 9, startTime: '17:00', endTime: '18:00' },
-  { slotNumber: 10, startTime: '18:00', endTime: '19:00' },
-  { slotNumber: 11, startTime: '19:00', endTime: '20:00' },
-  { slotNumber: 12, startTime: '20:00', endTime: '21:00' },
-];
 
 const DoctorProfile = () => {
   const { currentUser, setCurrentUser, logout } = useApp();
@@ -225,12 +208,16 @@ const DoctorProfile = () => {
     setFormData({ ...formData, schedule: updatedSchedule });
   };
 
-  const isSlotSelected = (day: Schedule['day'], slotNumber: number): boolean => {
-    if (!formData) return false;
+  /**
+   * Get selected slot numbers for a specific day
+   */
+  const getSelectedSlotsForDay = (day: Schedule['day']): number[] => {
+    if (!formData) return [];
     const scheduleDay = formData.schedule.find(s => s.day === day);
-    if (!scheduleDay) return false;
-    const slot = scheduleDay.slots.find(s => s.slotNumber === slotNumber);
-    return slot ? slot.isAvailable : false;
+    if (!scheduleDay) return [];
+    return scheduleDay.slots
+      .filter(slot => slot.isAvailable)
+      .map(slot => slot.slotNumber);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -517,45 +504,32 @@ const DoctorProfile = () => {
               />
             </div>
 
-            {/* NEW FIXED SLOT SCHEDULE UI */}
+            {/* NEW 15-MIN SLOT SCHEDULE UI */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Clock size={20} className="text-blue-500" /> Weekly Schedule (9 AM - 9 PM)
+                  <Clock size={20} className="text-blue-500" /> Weekly Schedule (15-Minute Slots)
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Select your available time slots for each day
+                  Set your available time slots
                 </p>
               </div>
               
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  ℹ️ Each slot is 1 hour. Click to toggle availability. Only selected slots will be visible to patients for booking.
+                  ℹ️ Each slot is 15 minutes. Select which slots you want to make available for patient booking.
+                  Slots are grouped into 2-hour time blocks for easier management.
                 </p>
               </div>
 
               {formData.schedule.map((scheduleDay) => (
                 <div key={scheduleDay.day} className="p-6 border rounded-xl dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-4">{scheduleDay.day}</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {FIXED_TIME_SLOTS.map((slot) => {
-                      const isSelected = isSlotSelected(scheduleDay.day, slot.slotNumber);
-                      return (
-                        <button
-                          key={slot.slotNumber}
-                          type="button"
-                          onClick={() => toggleSlotAvailability(scheduleDay.day, slot.slotNumber)}
-                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                            isSelected
-                              ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
-                              : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-500 hover:border-blue-400 dark:hover:border-blue-500'
-                          }`}
-                        >
-                          {slot.startTime} - {slot.endTime}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <TimeBlockSelector
+                    selectedSlots={getSelectedSlotsForDay(scheduleDay.day)}
+                    onSlotToggle={(slotNumber) => toggleSlotAvailability(scheduleDay.day, slotNumber)}
+                    mode="select"
+                  />
                 </div>
               ))}
             </div>

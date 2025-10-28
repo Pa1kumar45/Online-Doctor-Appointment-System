@@ -14,25 +14,7 @@
 
 import { Appointment } from '../models/Appointment.js';
 import { Doctor } from '../models/Doctor.js';
-
-/**
- * Fixed time slots configuration (9 AM - 9 PM, 1 hour each)
- * Slot 1: 09:00-10:00, Slot 2: 10:00-11:00, ..., Slot 12: 20:00-21:00
- */
-const FIXED_TIME_SLOTS = [
-  { slotNumber: 1, startTime: '09:00', endTime: '10:00' },
-  { slotNumber: 2, startTime: '10:00', endTime: '11:00' },
-  { slotNumber: 3, startTime: '11:00', endTime: '12:00' },
-  { slotNumber: 4, startTime: '12:00', endTime: '13:00' },
-  { slotNumber: 5, startTime: '13:00', endTime: '14:00' },
-  { slotNumber: 6, startTime: '14:00', endTime: '15:00' },
-  { slotNumber: 7, startTime: '15:00', endTime: '16:00' },
-  { slotNumber: 8, startTime: '16:00', endTime: '17:00' },
-  { slotNumber: 9, startTime: '17:00', endTime: '18:00' },
-  { slotNumber: 10, startTime: '18:00', endTime: '19:00' },
-  { slotNumber: 11, startTime: '19:00', endTime: '20:00' },
-  { slotNumber: 12, startTime: '20:00', endTime: '21:00' },
-];
+import { FIXED_TIME_SLOTS } from '../utils/timeSlots.js';
 
 /**
  * Get available slots for a doctor on a specific date
@@ -236,8 +218,8 @@ export const createAppointment = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!slotNumber || slotNumber < 1 || slotNumber > 12) {
-      return res.status(400).json({ message: 'Valid slot number (1-12) is required' });
+    if (!slotNumber || slotNumber < 1 || slotNumber > 96) {
+      return res.status(400).json({ message: 'Valid slot number (1-96) is required' });
     }
 
     // Validate that the target doctor exists
@@ -497,5 +479,50 @@ export const getPatientAppointments = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Error fetching patient appointments' });
+  }
+};
+
+/**
+ * Get count of upcoming appointments for doctor today
+ * 
+ * Returns the count of scheduled appointments for the current day
+ * that are in the future (haven't started yet).
+ * 
+ * @async
+ * @function getTodayUpcomingCount
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated doctor object (from middleware)
+ * @param {Object} res - Express response object
+ * 
+ * @returns {Object} JSON object with count of upcoming appointments
+ * @throws {500} If database query fails
+ */
+export const getTodayUpcomingCount = async (req, res) => {
+  try {
+    const doctorId = req.user._id;
+    
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Get current time in HH:MM format
+    const currentTime = `${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`;
+    
+    // Find all scheduled appointments for today that haven't started yet
+    const upcomingAppointments = await Appointment.find({
+      doctorId,
+      date: todayStr,
+      status: 'scheduled',
+      startTime: { $gt: currentTime }
+    });
+    
+    res.json({ 
+      count: upcomingAppointments.length,
+      date: todayStr,
+      currentTime
+    });
+  } catch (error) {
+    console.error('Error fetching upcoming count:', error);
+    res.status(500).json({ message: 'Error fetching upcoming appointments count' });
   }
 };

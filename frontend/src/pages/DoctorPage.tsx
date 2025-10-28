@@ -33,10 +33,12 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {  Clock, Briefcase, GraduationCap, User, Phone, Calendar, CheckCircle } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import TimeBlockSelector from '../components/TimeBlockSelector';
 import { doctorService } from '../services/doctor.service';
 import { appointmentService } from '../services/appointment.service';
 import { Doctor } from '../types/index.ts';
 import { getErrorMessage } from '../utils/auth';
+import { formatTime12Hour } from '../utils/timeSlots';
 
 import { useApp } from '../context/AppContext';
 
@@ -280,16 +282,19 @@ const DoctorPage: React.FC = () => {
                           <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
                             {schedule.day}
                           </h3>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5">
                             {schedule.slots.map((slot, slotIndex) => (
                               <span
                                 key={slotIndex}
                                 className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs"
                               >
-                                {`${slot.startTime} - ${slot.endTime}`}
+                                {formatTime12Hour(slot.startTime)}-{formatTime12Hour(slot.endTime)}
                               </span>
                             ))}
                           </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {schedule.slots.length} slot{schedule.slots.length !== 1 ? 's' : ''} available
+                          </p>
                         </div>
                       )
                     ))}
@@ -331,7 +336,7 @@ const DoctorPage: React.FC = () => {
                 {selectedDate && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Available Time Slots
+                      Available 15-Minute Time Slots
                     </label>
                     
                     {isFetchingSlots ? (
@@ -339,26 +344,23 @@ const DoctorPage: React.FC = () => {
                         <LoadingSpinner />
                       </div>
                     ) : availableSlots.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {availableSlots.map((slot) => (
-                          <button
-                            key={slot.slotNumber}
-                            type="button"
-                            onClick={() => setSelectedSlot(slot)}
-                            className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                              selectedSlot?.slotNumber === slot.slotNumber
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-500 hover:border-blue-400 dark:hover:border-blue-500'
-                            }`}
-                          >
-                            {slot.startTime} - {slot.endTime}
-                          </button>
-                        ))}
-                      </div>
+                      <TimeBlockSelector
+                        selectedSlots={selectedSlot ? [selectedSlot.slotNumber] : []}
+                        onSlotToggle={(slotNumber) => {
+                          const slot = availableSlots.find(s => s.slotNumber === slotNumber);
+                          if (slot) {
+                            setSelectedSlot(slot);
+                          }
+                        }}
+                        readOnly={false}
+                        mode="view"
+                        availableSlots={availableSlots.map(s => s.slotNumber)}
+                      />
                     ) : (
-                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                         <Clock size={32} className="mx-auto mb-2" />
                         <p>No available slots for this date</p>
+                        <p className="text-sm mt-1">Please try another date</p>
                       </div>
                     )}
                   </div>

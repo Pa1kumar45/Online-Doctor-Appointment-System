@@ -49,6 +49,10 @@ interface LoginFormData {
 interface SuspensionInfo {
   reason: string;
   suspendedAt?: string;
+  adminContact?: {
+    name: string;
+    email: string;
+  };
 }
 
 /**
@@ -103,7 +107,8 @@ const Login = () => {
       if (err.response?.data?.suspended) {
         setSuspensionInfo({
           reason: err.response.data.suspensionReason,
-          suspendedAt: err.response.data.suspendedAt
+          suspendedAt: err.response.data.suspendedAt,
+          adminContact: err.response.data.adminContact
         });
       } else {
         // Handle general authentication errors
@@ -310,7 +315,7 @@ const Login = () => {
                   <AlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Account Suspended
+                  Account Deactivated
                 </h3>
               </div>
               <button
@@ -324,13 +329,13 @@ const Login = () => {
             {/* Modal Body */}
             <div className="mb-6">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Your account has been suspended by an administrator and you cannot log in at this time.
+                Your account has been deactivated by an administrator and you cannot log in at this time.
               </p>
 
               {/* Suspension Reason */}
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
                 <p className="text-sm font-medium text-red-800 dark:text-red-400 mb-1">
-                  Reason for Suspension:
+                  Reason for Deactivation:
                 </p>
                 <p className="text-sm text-red-700 dark:text-red-300">
                   {suspensionInfo.reason}
@@ -340,7 +345,7 @@ const Login = () => {
               {/* Suspension Date */}
               {suspensionInfo.suspendedAt && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Suspended on: {new Date(suspensionInfo.suspendedAt).toLocaleDateString('en-US', {
+                  Deactivated on: {new Date(suspensionInfo.suspendedAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -352,12 +357,22 @@ const Login = () => {
 
               {/* Contact Support */}
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <span className="font-medium">Need help?</span> Please contact our support team at{' '}
-                  <a href="mailto:support@healthconnect.com" className="underline hover:text-blue-600">
-                    support@healthconnect.com
+                <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
+                  <span className="font-medium">Need help?</span> Please contact the administrator for assistance:
+                </p>
+                <div className="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-700">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {suspensionInfo.adminContact?.name || 'System Administrator'}
+                  </p>
+                  <a 
+                    href={`mailto:${suspensionInfo.adminContact?.email || 'support@healthconnect.com'}`}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {suspensionInfo.adminContact?.email || 'support@healthconnect.com'}
                   </a>
-                  {' '}to appeal this suspension or get more information.
+                </div>
+                <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
+                  You can appeal this deactivation or request more information by contacting the administrator above.
                 </p>
               </div>
             </div>
