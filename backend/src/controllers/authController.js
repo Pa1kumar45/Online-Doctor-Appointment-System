@@ -301,6 +301,27 @@ export const login = async (req, res) => {
 
     // Check if account is suspended/inactive
     if (!user.isActive) {
+      // Fetch admin details who suspended the account
+      let adminContact = {
+        email: 'support@healthconnect.com',
+        name: 'System Administrator'
+      };
+      
+      if (user.suspendedBy) {
+        try {
+          const admin = await Admin.findById(user.suspendedBy).select('name email');
+          if (admin) {
+            adminContact = {
+              email: admin.email,
+              name: admin.name
+            };
+          }
+        } catch (adminError) {
+          console.error('Error fetching admin details:', adminError);
+          // Use default contact if admin lookup fails
+        }
+      }
+
       // Log failed login attempt due to suspension
       await logAuthEvent({
         req,
@@ -322,6 +343,7 @@ export const login = async (req, res) => {
         suspended: true,
         suspensionReason: user.suspensionReason || 'Your account has been suspended by an administrator. Please contact support for more information.',
         suspendedAt: user.suspendedAt,
+        adminContact: adminContact
       });
     }
 

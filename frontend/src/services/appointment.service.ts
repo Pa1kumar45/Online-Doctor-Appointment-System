@@ -242,5 +242,30 @@ export const appointmentService = {
     }
 
     return response.json();
+  },
+
+  /**
+   * getTodayUpcomingCount - Get count of upcoming appointments for today
+   * 
+   * Fetches the count of scheduled appointments for the current day
+   * that haven't started yet. Used in doctor dashboard.
+   * 
+   * API Details:
+   * - Endpoint: GET /api/appointments/doctor/today-count
+   * - Authentication: Cookie-based (credentials: 'include')
+   * 
+   * @returns {Promise<{count: number, date: string, currentTime: string}>}
+   */
+  async getTodayUpcomingCount(): Promise<{count: number, date: string, currentTime: string}> {
+    const response = await fetch(`${API_URL}/appointments/doctor/today-count`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch upcoming count');
+    }
+
+    return response.json();
   }
 };

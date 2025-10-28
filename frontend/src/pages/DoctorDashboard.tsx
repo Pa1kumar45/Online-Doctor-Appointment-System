@@ -28,7 +28,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Check, X, Clock, Calendar, User, AlertCircle } from 'lucide-react';
+import { Check, X, Clock, Calendar, User, AlertCircle, TrendingUp } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Appointment, AppointmentStatus } from '../types/types';
 import { appointmentService } from '../services/appointment.service';
@@ -40,10 +40,16 @@ const DoctorDashboard = () => {
     const [error, setError] = useState<string | null>(null);
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [filter, setFilter] = useState<'all' | 'pending' | 'upcoming' | 'active' | 'past'>('active');
+    const [todayUpcomingCount, setTodayUpcomingCount] = useState<number>(0);
 
     // Fetch appointments on component mount
     useEffect(() => {
         fetchAppointments();
+        fetchTodayUpcomingCount();
+        
+        // Refresh count every minute
+        const interval = setInterval(fetchTodayUpcomingCount, 60000);
+        return () => clearInterval(interval);
     }, []);
 
     /**
@@ -62,6 +68,20 @@ const DoctorDashboard = () => {
             console.error('Error fetching appointments:', err);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    /**
+     * Fetch count of upcoming appointments for today
+     * 
+     * Updates the counter showing scheduled appointments for today.
+     */
+    const fetchTodayUpcomingCount = async () => {
+        try {
+            const data = await appointmentService.getTodayUpcomingCount();
+            setTodayUpcomingCount(data.count);
+        } catch (err) {
+            console.error('Error fetching upcoming count:', err);
         }
     };
 
@@ -167,13 +187,35 @@ const DoctorDashboard = () => {
                 </div>
             )}
 
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Appointments
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                    Welcome, Dr. {currentUser?.name}
-                </p>
+            {/* Header with upcoming appointments counter */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        Appointments
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Welcome, Dr. {currentUser?.name}
+                    </p>
+                </div>
+
+                {/* Today's Upcoming Appointments Counter */}
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-4 min-w-[200px]">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm opacity-90">Today's Upcoming</p>
+                            <p className="text-3xl font-bold">{todayUpcomingCount}</p>
+                        </div>
+                        <div className="bg-white/20 rounded-full p-3">
+                            <TrendingUp size={24} />
+                        </div>
+                    </div>
+                    <p className="text-xs mt-2 opacity-75">
+                        {todayUpcomingCount === 0 
+                            ? 'No appointments scheduled' 
+                            : `${todayUpcomingCount} appointment${todayUpcomingCount !== 1 ? 's' : ''} remaining today`
+                        }
+                    </p>
+                </div>
             </div>
 
             <div className="flex space-x-2 mb-6">

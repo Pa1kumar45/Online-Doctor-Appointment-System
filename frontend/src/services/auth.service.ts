@@ -154,7 +154,10 @@ export const authService = {
     // Error handling for login failures
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Login failed');
+      // Create error with the full response data for suspension info
+      const err: any = new Error(error.message || 'Login failed');
+      err.response = { data: error };
+      throw err;
     }
 
     const result = await response.json();
