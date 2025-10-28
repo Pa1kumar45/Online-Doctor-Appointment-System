@@ -36,7 +36,7 @@ const createTestAdmin = async () => {
     const admin = await Admin.create({
       name: 'System Administrator',
       email: 'admin@healthconnect.com',
-      password: 'Admin@123456', // Change this password after first login!
+      password: '#1ap@NITK', // Change this password after first login!
       role: 'super_admin',
       isActive: true,
       permissions: [
@@ -52,7 +52,7 @@ const createTestAdmin = async () => {
     console.log('\n✅ Admin user created successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📧 Email:', admin.email);
-    console.log('🔑 Password: Admin@123456');
+    console.log('🔑 Password: #1ap@NITK');
     console.log('👤 Role:', admin.role);
     console.log('🆔 ID:', admin._id);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -61,7 +61,7 @@ const createTestAdmin = async () => {
     console.log('   POST http://localhost:5000/api/auth/admin/login');
     console.log('   Body: {');
     console.log('     "email": "admin@healthconnect.com",');
-    console.log('     "password": "Admin@123456"');
+    console.log('     "password": "#1ap@NITK"');
     console.log('   }');
     console.log('\n🌐 Or use the frontend:');
     console.log('   1. Go to http://localhost:5173/login');

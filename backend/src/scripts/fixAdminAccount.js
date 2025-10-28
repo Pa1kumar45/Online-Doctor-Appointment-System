@@ -19,7 +19,7 @@ const fixAdminAccount = async () => {
     console.log('Updated', result.modifiedCount, 'admin account(s)');
     console.log('\n📧 You can now login with:');
     console.log('   Email: admin@healthconnect.com');
-    console.log('   Password: Admin@123456');
+    console.log('   Password: #1ap@NITK');
 
     await mongoose.connection.close();
     process.exit(0);
