@@ -16,7 +16,7 @@ const checkAdmins = async () => {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB\n');
 
-    const admins = await Admin.find().select('-password');
+    const admins = await Admin.find().select('+password'); // Include password to show hash
 
     console.log(`📊 Found ${admins.length} admin(s) in database:\n`);
 
@@ -30,6 +30,7 @@ const checkAdmins = async () => {
         console.log(`   Name: ${admin.name}`);
         console.log(`   Role: ${admin.role}`);
         console.log(`   Status: ${admin.isActive ? '✅ Active' : '❌ Inactive'}`);
+        console.log(`   Password Hash: ${admin.password}`);
         console.log(`   Created: ${admin.createdAt}\n`);
       });
     }
