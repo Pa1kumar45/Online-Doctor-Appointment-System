@@ -5,7 +5,6 @@
  */
 
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import readline from 'readline';
 import Admin from '../models/Admin.js';
@@ -60,9 +59,8 @@ const resetAdminPassword = async () => {
       process.exit(1);
     }
 
-    // Hash and update password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    admin.password = hashedPassword;
+    // Update password (will be hashed automatically by pre-save hook)
+    admin.password = newPassword;
     await admin.save();
 
     console.log('\n✅ Password updated successfully!');
