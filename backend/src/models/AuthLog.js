@@ -58,14 +58,14 @@ const authLogSchema = new mongoose.Schema({
     ],
     index: true,
   },
-  ipAddress: {
-    type: String,
-    required: true,
-  },
-  userAgent: {
-    type: String,
-    required: true,
-  },
+  // ipAddress: {
+  //   type: String,
+  //   required: true,
+  // },
+  // userAgent: {
+  //   type: String,
+  //   required: true,
+  // },
   success: {
     type: Boolean,
     required: true,

@@ -2,12 +2,12 @@
  * Time Slots Utility
  * 
  * Centralized configuration for appointment time slots.
- * Generates 96 fixed 15-minute slots from 9 AM to 9 PM.
+ * Generates 48 fixed 15-minute slots from 9 AM to 9 PM.
  * 
  * Slot organization:
  * - 12 hours of operation (9 AM - 9 PM)
  * - 4 slots per hour (15-minute intervals)
- * - Total: 96 slots
+ * - Total: 48 slots
  * 
  * Time blocks (for UI grouping):
  * - Block 1: 9:00-11:00 (slots 1-8)
@@ -21,7 +21,7 @@
  */
 
 /**
- * Generate all 96 time slots (15-minute intervals from 9 AM to 9 PM)
+ * Generate all 48 time slots (15-minute intervals from 9 AM to 9 PM)
  * 
  * @returns {Array} Array of slot objects with slotNumber, startTime, endTime
  */
@@ -99,7 +99,7 @@ export const getSlotsForBlock = (blockIndex) => {
 /**
  * Get time block for a given slot number
  * 
- * @param {number} slotNumber - Slot number (1-96)
+ * @param {number} slotNumber - Slot number (1-48)
  * @returns {Object|null} Time block object or null if not found
  */
 export const getBlockForSlot = (slotNumber) => {

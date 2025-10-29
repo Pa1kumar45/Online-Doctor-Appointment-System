@@ -13,9 +13,9 @@ dotenv.config();
 
 const verifyAdmin = async () => {
   try {
-    console.log('🔄 Connecting to MongoDB...');
+    console.log('[INFO] Connecting to MongoDB...');
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB\n');
+    console.log('[SUCCESS] Connected to MongoDB\n');
 
     const email = 'admin@healthconnect.com';
     const testPassword = 'admin123';
@@ -24,11 +24,11 @@ const verifyAdmin = async () => {
     const admin = await Admin.findOne({ email }).select('+password');
 
     if (!admin) {
-      console.log(`❌ Admin with email "${email}" not found!`);
+      console.log(`[ERROR] Admin with email "${email}" not found!`);
       process.exit(1);
     }
 
-    console.log('📋 Admin Account Details:');
+    console.log('[INFO] Admin Account Details:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`Name:       ${admin.name}`);
     console.log(`Email:      ${admin.email}`);
@@ -39,10 +39,10 @@ const verifyAdmin = async () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     // Test password comparison using model method
-    console.log('🔍 Testing password verification...\n');
+    console.log('[INFO] Testing password verification...\n');
     const isValid = await admin.comparePassword(testPassword);
     console.log(`Test Password: "${testPassword}"`);
-    console.log(`Result: ${isValid ? '✅ VALID' : '❌ INVALID'}\n`);
+    console.log(`Result: ${isValid ? '[SUCCESS] VALID' : '[ERROR] INVALID'}\n`);
 
     // Also test direct bcrypt comparison
     const directCompare = await bcrypt.compare(testPassword, admin.password);

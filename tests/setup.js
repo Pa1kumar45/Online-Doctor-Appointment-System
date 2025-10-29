@@ -14,5 +14,5 @@ beforeAll(() => {
 
 // Global teardown
 afterAll(() => {
-  console.log('✅ Test suite completed');
+  console.log('[SUCCESS] Test suite completed');
 });

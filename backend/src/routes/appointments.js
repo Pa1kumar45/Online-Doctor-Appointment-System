@@ -25,6 +25,7 @@ import {
   getPatientAppointments,
   getAvailableSlots,
   getTodayUpcomingCount,
+  getPendingCount,
   // updateAppointmentStatus
 } from '../controllers/appointmentController.js';
 import { protect } from '../middleware/auth.js';
@@ -104,6 +105,18 @@ router.get('/patient/', getPatientAppointments);
  * @returns {Object} Count of upcoming appointments
  */
 router.get('/doctor/today-count', getTodayUpcomingCount);
+
+/**
+ * GET /api/appointments/doctor/pending-count
+ * Get count of pending appointment requests
+ *
+ * @route GET /api/appointments/doctor/pending-count
+ * @access Private (Doctor only)
+ * @middleware protect - JWT authentication required
+ * @description Get the count of pending appointments that require doctor approval
+ * @returns {Object} Count of pending appointments
+ */
+router.get('/doctor/pending-count', getPendingCount);
 
 /**
  * GET /api/appointments/:id

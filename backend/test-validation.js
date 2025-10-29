@@ -195,7 +195,7 @@ async function runTests() {
   console.log('=' .repeat(80));
 
   // Test Registration Validation
-  console.log('\n📝 REGISTRATION VALIDATION TESTS\n');
+  console.log('\n[INFO] REGISTRATION VALIDATION TESTS\n');
   let passedTests = 0;
   let failedTests = 0;
 
@@ -212,10 +212,10 @@ async function runTests() {
     if (test.expectedError === null) {
       // Should succeed (201 Created)
       if (result.status === 201 && result.data.success) {
-        console.log('✅ PASS: Registration succeeded as expected');
+        console.log('[SUCCESS] PASS: Registration succeeded as expected');
         passedTests++;
       } else {
-        console.log('❌ FAIL: Expected success but got error');
+        console.log('[ERROR] FAIL: Expected success but got error');
         failedTests++;
       }
     } else {
@@ -223,21 +223,21 @@ async function runTests() {
       if (result.status === 400 && !result.data.success) {
         const hasExpectedError = JSON.stringify(result.data).includes(test.expectedError);
         if (hasExpectedError) {
-          console.log('✅ PASS: Got expected validation error');
+          console.log('[SUCCESS] PASS: Got expected validation error');
           passedTests++;
         } else {
-          console.log(`❌ FAIL: Expected error "${test.expectedError}" not found`);
+          console.log(`[ERROR] FAIL: Expected error "${test.expectedError}" not found`);
           failedTests++;
         }
       } else {
-        console.log('❌ FAIL: Expected validation error but got different response');
+        console.log('[ERROR] FAIL: Expected validation error but got different response');
         failedTests++;
       }
     }
   }
 
   // Test Login Validation
-  console.log('\n\n🔐 LOGIN VALIDATION TESTS\n');
+  console.log('\n\n[INFO] LOGIN VALIDATION TESTS\n');
 
   for (const test of loginTests) {
     console.log(`\n${test.name}`);
@@ -252,25 +252,25 @@ async function runTests() {
     if (result.status === 400 && !result.data.success) {
       const hasExpectedError = JSON.stringify(result.data).includes(test.expectedError);
       if (hasExpectedError) {
-        console.log('✅ PASS: Got expected validation error');
+        console.log('[SUCCESS] PASS: Got expected validation error');
         passedTests++;
       } else {
-        console.log(`❌ FAIL: Expected error "${test.expectedError}" not found`);
+        console.log(`[ERROR] FAIL: Expected error "${test.expectedError}" not found`);
         failedTests++;
       }
     } else {
-      console.log('❌ FAIL: Expected validation error but got different response');
+      console.log('[ERROR] FAIL: Expected validation error but got different response');
       failedTests++;
     }
   }
 
   // Print Summary
   console.log('\n\n' + '='.repeat(80));
-  console.log('📊 TEST SUMMARY');
+  console.log('[INFO] TEST SUMMARY');
   console.log('='.repeat(80));
   console.log(`Total Tests: ${passedTests + failedTests}`);
-  console.log(`✅ Passed: ${passedTests}`);
-  console.log(`❌ Failed: ${failedTests}`);
+  console.log(`[SUCCESS] Passed: ${passedTests}`);
+  console.log(`[ERROR] Failed: ${failedTests}`);
   console.log(`Success Rate: ${((passedTests / (passedTests + failedTests)) * 100).toFixed(2)}%`);
   console.log('='.repeat(80));
 }

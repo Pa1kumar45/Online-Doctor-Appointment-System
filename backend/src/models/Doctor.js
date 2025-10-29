@@ -83,7 +83,7 @@ const doctorSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 1,
-        max: 96, // 96 slots total (12 hours * 4 slots per hour)
+        max: 48, // 48 slots total (12 hours * 4 slots per hour)
       },
       startTime: {
         type: String,

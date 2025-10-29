@@ -41,14 +41,19 @@ const DoctorDashboard = () => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [filter, setFilter] = useState<'all' | 'pending' | 'upcoming' | 'active' | 'past'>('active');
     const [todayUpcomingCount, setTodayUpcomingCount] = useState<number>(0);
+    const [pendingCount, setPendingCount] = useState<number>(0);
 
     // Fetch appointments on component mount
     useEffect(() => {
         fetchAppointments();
         fetchTodayUpcomingCount();
+        fetchPendingCount();
         
-        // Refresh count every minute
-        const interval = setInterval(fetchTodayUpcomingCount, 60000);
+        // Refresh counts every minute
+        const interval = setInterval(() => {
+            fetchTodayUpcomingCount();
+            fetchPendingCount();
+        }, 60000);
         return () => clearInterval(interval);
     }, []);
 
@@ -86,10 +91,24 @@ const DoctorDashboard = () => {
     };
 
     /**
+     * Fetch count of pending appointments
+     * 
+     * Updates the counter showing pending appointments requiring approval.
+     */
+    const fetchPendingCount = async () => {
+        try {
+            const data = await appointmentService.getPendingCount();
+            setPendingCount(data.count);
+        } catch (err) {
+            console.error('Error fetching pending count:', err);
+        }
+    };
+
+    /**
      * Update appointment status
      * 
      * Allows doctor to accept, decline, or complete appointments.
-     * Refreshes appointment list after update.
+     * Refreshes appointment list and counts after update.
      * 
      * @param {Appointment} appointment - Appointment to update
      * @param {AppointmentStatus} status - New status to set
@@ -101,6 +120,14 @@ const DoctorDashboard = () => {
                 { ...appointment, status }
             );
             fetchAppointments();
+            
+            // Refresh counts if appointment status changed from or to pending
+            if (appointment.status === 'pending' || status === 'pending') {
+                fetchPendingCount();
+            }
+            if (status === 'scheduled') {
+                fetchTodayUpcomingCount();
+            }
         } catch (err) {
             setError('Failed to update appointment');
             console.error('Error updating appointment:', err);
@@ -188,7 +215,7 @@ const DoctorDashboard = () => {
                     </div>
                 )}
 
-                {/* Header with upcoming appointments counter */}
+                {/* Header with stats counters */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
@@ -199,25 +226,50 @@ const DoctorDashboard = () => {
                         </p>
                     </div>
 
-                    {/* Today's Upcoming Appointments Counter */}
-                    <div className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-75 group-hover:opacity-100 blur-lg transition-all duration-300"></div>
-                        <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-2xl p-6 min-w-[250px]">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm opacity-90 font-medium">Today's Upcoming</p>
-                                    <p className="text-5xl font-black mt-1">{todayUpcomingCount}</p>
+                    {/* Stats Counters */}
+                    <div className="flex gap-4 flex-wrap">
+                        {/* Today's Upcoming Appointments Counter */}
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-75 group-hover:opacity-100 blur-lg transition-all duration-300"></div>
+                            <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-2xl p-6 min-w-[250px]">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm opacity-90 font-medium">Today's Upcoming</p>
+                                        <p className="text-5xl font-black mt-1">{todayUpcomingCount}</p>
+                                    </div>
+                                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
+                                        <TrendingUp size={32} />
+                                    </div>
                                 </div>
-                                <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                                    <TrendingUp size={32} />
-                                </div>
+                                <p className="text-xs mt-3 opacity-90">
+                                    {todayUpcomingCount === 0 
+                                        ? 'No appointments scheduled' 
+                                        : `${todayUpcomingCount} appointment${todayUpcomingCount !== 1 ? 's' : ''} remaining today`
+                                    }
+                                </p>
                             </div>
-                            <p className="text-xs mt-3 opacity-90">
-                                {todayUpcomingCount === 0 
-                                    ? 'No appointments scheduled' 
-                                    : `${todayUpcomingCount} appointment${todayUpcomingCount !== 1 ? 's' : ''} remaining today`
-                                }
-                            </p>
+                        </div>
+
+                        {/* Pending Appointments Counter */}
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl opacity-75 group-hover:opacity-100 blur-lg transition-all duration-300"></div>
+                            <div className="relative bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl shadow-2xl p-6 min-w-[250px]">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm opacity-90 font-medium">Pending Requests</p>
+                                        <p className="text-5xl font-black mt-1">{pendingCount}</p>
+                                    </div>
+                                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
+                                        <Clock size={32} />
+                                    </div>
+                                </div>
+                                <p className="text-xs mt-3 opacity-90">
+                                    {pendingCount === 0 
+                                        ? 'No pending approvals' 
+                                        : `${pendingCount} appointment${pendingCount !== 1 ? 's' : ''} awaiting approval`
+                                    }
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
