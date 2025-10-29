@@ -327,44 +327,57 @@ const DoctorProfile = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-400 text-red-700 shadow-sm" role="alert">
-          <span className="block sm:inline">{error}</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
+            Doctor Profile
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Manage your professional information and availability
+          </p>
         </div>
-      )}
-      
-      {success && (
-        <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-400 text-green-700 shadow-sm" role="alert">
-          <span className="block sm:inline">{success}</span>
-        </div>
-      )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-        <div className="p-8">
-          <div className="flex items-center justify-between mb-10">
-            <div className="flex items-center space-x-6">
+        {error && (
+          <div className="mb-6 p-6 rounded-2xl bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 shadow-xl" role="alert">
+            <span className="block sm:inline font-semibold">{error}</span>
+          </div>
+        )}
+        
+        {success && (
+          <div className="mb-6 p-6 rounded-2xl bg-green-50 dark:bg-green-900/20 border-2 border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 shadow-xl" role="alert">
+            <span className="block sm:inline font-semibold">{success}</span>
+          </div>
+        )}
+
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="p-8">
+            {/* Profile Header */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-10 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700/50 dark:to-gray-700/50 rounded-2xl">
               {formData?.avatar ? (
                 <img
                   src={formData.avatar}
                   alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 dark:border-blue-900"
+                  className="w-32 h-32 rounded-3xl object-cover border-4 border-white dark:border-gray-700 shadow-xl"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-4xl font-bold border-4 border-blue-100 dark:border-blue-900">
+                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-5xl font-bold border-4 border-white dark:border-gray-700 shadow-xl">
                   {formData?.name?.charAt(0).toUpperCase() || 'D'}
                 </div>
               )}
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {formData?.name}
-                </h1>
-                <p className="text-lg text-blue-600 dark:text-blue-400 mt-1">
+              <div className="text-center sm:text-left">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">
+                  Dr. {formData?.name}
+                </h2>
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                   {formData?.specialization}
+                </p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {formData?.experience} years of experience
                 </p>
               </div>
             </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -505,26 +518,29 @@ const DoctorProfile = () => {
             </div>
 
             {/* NEW 15-MIN SLOT SCHEDULE UI */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Clock size={20} className="text-blue-500" /> Weekly Schedule (15-Minute Slots)
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700/50 dark:to-gray-700/50 rounded-2xl">
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                  <Clock size={24} className="text-blue-600" /> Weekly Schedule
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Set your available time slots
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                  15-Minute Slots
                 </p>
               </div>
               
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
                   ℹ️ Each slot is 15 minutes. Select which slots you want to make available for patient booking.
                   Slots are grouped into 2-hour time blocks for easier management.
                 </p>
               </div>
 
               {formData.schedule.map((scheduleDay) => (
-                <div key={scheduleDay.day} className="p-6 border rounded-xl dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-4">{scheduleDay.day}</h3>
+                <div key={scheduleDay.day} className="p-8 border-2 rounded-2xl dark:border-gray-700 bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 shadow-lg">
+                  <h3 className="font-black text-2xl text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                    <Calendar size={24} className="text-blue-600" />
+                    {scheduleDay.day}
+                  </h3>
                   <TimeBlockSelector
                     selectedSlots={getSelectedSlotsForDay(scheduleDay.day)}
                     onSlotToggle={(slotNumber) => toggleSlotAvailability(scheduleDay.day, slotNumber)}
@@ -537,7 +553,7 @@ const DoctorProfile = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-4 px-6 border-2 border-transparent rounded-2xl shadow-lg text-lg font-black text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105"
             >
               {isLoading ? <LoadingSpinner /> : 'Save Changes'}
             </button>
@@ -557,6 +573,7 @@ const DoctorProfile = () => {
             }, 2000);
           }}
         />
+      </div>
       </div>
     </div>
   );
