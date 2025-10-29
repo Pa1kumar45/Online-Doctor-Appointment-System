@@ -47,22 +47,6 @@ const adminSchema = new mongoose.Schema({
     select: false,
   },
   // Password reset functionality
-  passwordResetToken: {
-    type: String, // Hashed reset token for password recovery
-  },
-  passwordResetExpires: {
-    type: Date, // Expiration time for reset token (1 hour)
-  },
-  passwordChangedAt: {
-    type: Date, // Timestamp of last password change
-  },
-  passwordResetCount: {
-    type: Number,
-    default: 0, // Track number of times password has been reset via forgot password
-  },
-  passwordResetUsedAt: {
-    type: Date, // Timestamp when password reset was used
-  },
   role: {
     type: String,
     default: 'admin',
@@ -72,10 +56,7 @@ const adminSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  Permissions: [{
-    type: String,
-    enum: ['user_management', 'appoinment_management', 'system_settings', 'reports'],
-  }],
+
   lastlogin: {
     type: Date,
   },

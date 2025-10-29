@@ -267,5 +267,30 @@ export const appointmentService = {
     }
 
     return response.json();
+  },
+
+  /**
+   * getPendingCount - Get count of pending appointment requests
+   * 
+   * Fetches the count of pending appointments that require doctor approval.
+   * Used in doctor dashboard to show notification badge.
+   * 
+   * API Details:
+   * - Endpoint: GET /api/appointments/doctor/pending-count
+   * - Authentication: Cookie-based (credentials: 'include')
+   * 
+   * @returns {Promise<{count: number}>}
+   */
+  async getPendingCount(): Promise<{count: number}> {
+    const response = await fetch(`${API_URL}/appointments/doctor/pending-count`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch pending count');
+    }
+
+    return response.json();
   }
 };

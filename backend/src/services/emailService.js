@@ -35,7 +35,7 @@ const getRoleDisplay = (role) => {
 const createTransporter = () => {
   // Check if email service is configured
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-    console.warn('⚠️  Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD in .env');
+    console.warn('[WARNING] Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD in .env');
     return null;
   }
 
@@ -53,10 +53,10 @@ const createTransporter = () => {
       },
     });
 
-    console.log('✅ Email service configured successfully');
+    console.log('[SUCCESS] Email service configured successfully');
     return transporter;
   } catch (error) {
-    console.error('❌ Error configuring email service:', error.message);
+    console.error('[ERROR] Error configuring email service:', error.message);
     return null;
   }
 };
@@ -159,12 +159,12 @@ const getOTPEmailTemplate = (name, otp, purpose) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🏥 HealthConnect</h1>
+          <h1>HealthConnect</h1>
           <p>Your Online Doctor Appointment System</p>
         </div>
         
         <div class="content">
-          <h2>Hello ${name}! 👋</h2>
+          <h2>Hello ${name}!</h2>
           <p>We received a request to ${actionText}. Use the OTP code below to proceed:</p>
           
           <div class="otp-box">
@@ -174,12 +174,12 @@ const getOTPEmailTemplate = (name, otp, purpose) => {
           </div>
           
           <div class="info-box">
-            <strong>⏰ This OTP will expire in 10 minutes.</strong><br>
+            <strong>This OTP will expire in 10 minutes.</strong><br>
             You have 3 attempts to enter the correct OTP.
           </div>
           
           <div class="warning-box">
-            <strong>🔒 Security Notice:</strong><br>
+            <strong>Security Notice:</strong><br>
             • Never share this OTP with anyone<br>
             • HealthConnect will never ask for your OTP via phone or SMS<br>
             • If you didn't request this OTP, please ignore this email
@@ -255,7 +255,7 @@ export const sendOTPEmail = async ({
   }
 
   const subject = purpose === 'registration'
-    ? '🔐 Verify Your Email - HealthConnect Registration'
+    ? 'Verify Your Email - HealthConnect Registration'
     : '🔐 Your Login OTP - HealthConnect';
 
   const mailOptions = {

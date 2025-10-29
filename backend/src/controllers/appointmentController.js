@@ -356,7 +356,7 @@ export const updateAppointment = async (req, res) => {
 
     // If status changed from 'pending' to 'scheduled', send acceptance email
     if (oldStatus === 'pending' && appointment.status === 'scheduled') {
-      console.log('📧 Sending appointment acceptance email...');
+      console.log('[EMAIL] Sending appointment acceptance email...');
       console.log('Patient Data:', {
         id: patient._id,
         name: patient.name,
@@ -380,7 +380,7 @@ export const updateAppointment = async (req, res) => {
       // Send acceptance email to patient
       try {
         if (!patient.email) {
-          console.error('❌ Patient email is undefined!');
+          console.error('[ERROR] Patient email is undefined!');
           throw new Error('Patient email not found');
         }
         
@@ -392,9 +392,9 @@ export const updateAppointment = async (req, res) => {
           appointmentDate: formattedDate,
           appointmentTime: `${appointment.startTime} - ${appointment.endTime}`,
         });
-        console.log('✅ Appointment acceptance email sent successfully to:', patient.email);
+        console.log('[SUCCESS] Appointment acceptance email sent successfully to:', patient.email);
       } catch (emailError) {
-        console.error('❌ Error sending appointment acceptance email:', emailError.message);
+        console.error('[ERROR] Error sending appointment acceptance email:', emailError.message);
         // Don't fail the request if email fails - appointment is still updated
       }
     }
@@ -577,5 +577,39 @@ export const getTodayUpcomingCount = async (req, res) => {
   } catch (error) {
     console.error('Error fetching upcoming count:', error);
     res.status(500).json({ message: 'Error fetching upcoming appointments count' });
+  }
+};
+
+/**
+ * Get Pending Appointments Count for Doctor
+ * 
+ * Returns the count of all pending (not yet approved) appointment requests
+ * for the authenticated doctor. Pending appointments are those with status 'pending'
+ * that require doctor approval.
+ * 
+ * @function getPendingCount
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated doctor object (from middleware)
+ * @param {Object} res - Express response object
+ * 
+ * @returns {Object} JSON object with count of pending appointments
+ * @throws {500} If database query fails
+ */
+export const getPendingCount = async (req, res) => {
+  try {
+    const doctorId = req.user._id;
+    
+    // Find all pending appointments for this doctor
+    const pendingAppointments = await Appointment.find({
+      doctorId,
+      status: 'pending'
+    });
+    
+    res.json({ 
+      count: pendingAppointments.length
+    });
+  } catch (error) {
+    console.error('Error fetching pending count:', error);
+    res.status(500).json({ message: 'Error fetching pending appointments count' });
   }
 };

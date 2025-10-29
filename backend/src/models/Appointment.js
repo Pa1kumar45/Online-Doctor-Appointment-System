@@ -4,10 +4,7 @@
  * This module defines the MongoDB schema for appointment entities in the healthcare system.
  * It manages:
  * - Appointment scheduling between doctors and patients
- * - Appointment status tracking (pending, scheduled, completed, etc.)
- * - Appointment modes (video call or chat)
- * - Patient feedback (ratings and reviews)
- * - Medical notes and comments
+ * - Appointment status tracking (pending, scheduled, completed, cancelled)
  *
  * @module Appointment
  * @requires mongoose - MongoDB object modeling library
@@ -42,9 +39,9 @@ const appointmentSchema = new mongoose.Schema({
   },
   slotNumber: {
     type: Number,
-    required: true, // Which slot (1-96) corresponding to 9 AM - 9 PM in 15-min intervals
+    required: true, // Which slot (1-48) corresponding to 9 AM - 9 PM (12 hours) in 15-min intervals
     min: 1,
-    max: 96,
+    max: 48,
   },
   startTime: {
     type: String,
@@ -58,7 +55,7 @@ const appointmentSchema = new mongoose.Schema({
   // Appointment management
   status: {
     type: String,
-    enum: ['pending', 'scheduled', 'completed', 'cancelled', 'rescheduled'],
+    enum: ['pending', 'scheduled', 'completed', 'cancelled'],
     default: 'pending', // Default status for new appointments
   },
 
@@ -67,35 +64,6 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     required: false, // Patient's reason for the appointment
     trim: true,
-  },
-  comment: {
-    type: String,
-    required: false, // Additional comments from patient
-    trim: true,
-  },
-  notes: {
-    type: String,
-    required: false, // Doctor's medical notes after appointment
-    trim: true,
-  },
-
-  // Post-appointment feedback
-  rating: {
-    type: Number,
-    required: false, // Patient's rating of the appointment (1-5)
-    min: 1,
-    max: 5,
-  },
-  review: {
-    type: String,
-    required: false, // Patient's written review of the appointment
-    trim: true,
-  },
-
-  // Reminder tracking
-  reminderSent: {
-    type: Boolean,
-    default: false, // Track if reminder email has been sent
   },
 }, {
   timestamps: true, // Automatically add createdAt and updatedAt fields
@@ -107,13 +75,9 @@ const appointmentSchema = new mongoose.Schema({
  * These indexes improve query performance for common appointment searches:
  * - doctorId + date: For finding doctor's appointments on specific dates
  * - patientId + date: For finding patient's appointments on specific dates
- *
- * Note: The original indexes reference 'dateTime' field which doesn't exist in schema.
- * These should be updated to use separate 'date' and 'startTime' fields.
  */
-// Create compound indexes for efficient querying
-appointmentSchema.index({ doctorId: 1, date: 1 }); // For doctor appointment queries
-appointmentSchema.index({ patientId: 1, date: 1 }); // For patient appointment queries
+appointmentSchema.index({ doctorId: 1, date: 1 });
+appointmentSchema.index({ patientId: 1, date: 1 });
 
 /**
  * Appointment Model
