@@ -179,221 +179,239 @@ const DoctorDashboard = () => {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-4">
-            {error && (
-                <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    <AlertCircle className="inline-block mr-2" size={20} />
-                    {error}
-                </div>
-            )}
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+            <div className="max-w-7xl mx-auto p-6">
+                {error && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-6 py-4 rounded-xl mb-6 flex items-center gap-3 shadow-lg animate-fade-in">
+                        <AlertCircle size={24} />
+                        <span className="font-medium">{error}</span>
+                    </div>
+                )}
 
-            {/* Header with upcoming appointments counter */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        Appointments
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-400">
-                        Welcome, Dr. {currentUser?.name}
-                    </p>
-                </div>
+                {/* Header with upcoming appointments counter */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                    <div>
+                        <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
+                            My Appointments
+                        </h1>
+                        <p className="text-lg text-gray-600 dark:text-gray-400">
+                            Welcome back, <span className="font-bold text-blue-600 dark:text-blue-400">Dr. {currentUser?.name}</span>
+                        </p>
+                    </div>
 
-                {/* Today's Upcoming Appointments Counter */}
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-4 min-w-[200px]">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm opacity-90">Today's Upcoming</p>
-                            <p className="text-3xl font-bold">{todayUpcomingCount}</p>
-                        </div>
-                        <div className="bg-white/20 rounded-full p-3">
-                            <TrendingUp size={24} />
+                    {/* Today's Upcoming Appointments Counter */}
+                    <div className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-75 group-hover:opacity-100 blur-lg transition-all duration-300"></div>
+                        <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-2xl p-6 min-w-[250px]">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm opacity-90 font-medium">Today's Upcoming</p>
+                                    <p className="text-5xl font-black mt-1">{todayUpcomingCount}</p>
+                                </div>
+                                <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
+                                    <TrendingUp size={32} />
+                                </div>
+                            </div>
+                            <p className="text-xs mt-3 opacity-90">
+                                {todayUpcomingCount === 0 
+                                    ? 'No appointments scheduled' 
+                                    : `${todayUpcomingCount} appointment${todayUpcomingCount !== 1 ? 's' : ''} remaining today`
+                                }
+                            </p>
                         </div>
                     </div>
-                    <p className="text-xs mt-2 opacity-75">
-                        {todayUpcomingCount === 0 
-                            ? 'No appointments scheduled' 
-                            : `${todayUpcomingCount} appointment${todayUpcomingCount !== 1 ? 's' : ''} remaining today`
-                        }
-                    </p>
                 </div>
-            </div>
 
-            <div className="flex space-x-2 mb-6">
-                <button
-                    onClick={() => setFilter('all')}
-                    className={`px-4 py-2 rounded-md ${
-                        filter === 'all'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                >
-                    All
-                </button>
-                <button
-                    onClick={() => setFilter('active')}
-                    className={`px-4 py-2 rounded-md ${
-                        filter === 'active'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                >
-                    Active
-                </button>
-                <button
-                    onClick={() => setFilter('pending')}
-                    className={`px-4 py-2 rounded-md ${
-                        filter === 'pending'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                >
-                    Pending
-                </button>
-                <button
-                    onClick={() => setFilter('upcoming')}
-                    className={`px-4 py-2 rounded-md ${
-                        filter === 'upcoming'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                >
-                    Upcoming
-                </button>
-                <button
-                    onClick={() => setFilter('past')}
-                    className={`px-4 py-2 rounded-md ${
-                        filter === 'past'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                >
-                    Past
-                </button>
-            </div>
-
-            {filteredAppointments.length === 0 ? (
-                <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                    <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-xl text-gray-500 dark:text-gray-400">No appointments found</p>
-                    <p className="text-gray-500 dark:text-gray-400">
-                        {filter === 'pending' && "You have no pending appointment requests"}
-                        {filter === 'upcoming' && "You have no upcoming appointments"}
-                        {filter === 'active' && "You have no active appointments right now"}
-                        {filter === 'past' && "You have no past appointments"}
-                        {filter === 'all' && "You have no appointments yet"}
-                    </p>
+                {/* Filter Buttons */}
+                <div className="flex flex-wrap gap-3 mb-8">
+                    <button
+                        onClick={() => setFilter('all')}
+                        className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                            filter === 'all'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
+                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500'
+                        }`}
+                    >
+                        All
+                    </button>
+                    <button
+                        onClick={() => setFilter('active')}
+                        className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                            filter === 'active'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
+                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500'
+                        }`}
+                    >
+                        Active
+                    </button>
+                    <button
+                        onClick={() => setFilter('pending')}
+                        className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                            filter === 'pending'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
+                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500'
+                        }`}
+                    >
+                        Pending
+                    </button>
+                    <button
+                        onClick={() => setFilter('upcoming')}
+                        className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                            filter === 'upcoming'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
+                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500'
+                        }`}
+                    >
+                        Upcoming
+                    </button>
+                    <button
+                        onClick={() => setFilter('past')}
+                        className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                            filter === 'past'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
+                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500'
+                        }`}
+                    >
+                        Past
+                    </button>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {filteredAppointments.map(appointment => (
-                        <div 
-                            key={appointment._id} 
-                            className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
-                        >
-                            <div className="p-5 border-b dark:border-gray-700">
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-3">
-                                        <User size={22} className="text-blue-500" />
-                                        <span className="font-bold text-lg text-gray-800 dark:text-white">
-                                            {typeof appointment.patientId === 'object' ? appointment.patientId.name : 'Unknown Patient'}
-                                        </span>
-                                    </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(appointment.status)}`}>
-                                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div className="p-5 space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <Calendar size={18} className="text-gray-500" />
-                                    <span className="text-gray-700 dark:text-gray-300">
-                                        {new Date(appointment.date).toLocaleDateString('en-US', { 
-                                            weekday: 'long', 
-                                            year: 'numeric', 
-                                            month: 'long', 
-                                            day: 'numeric' 
-                                        })}
-                                    </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-3">
-                                    <Clock size={18} className="text-gray-500" />
-                                    <span className="text-gray-700 dark:text-gray-300">
-                                        {appointment.startTime} - {appointment.endTime}
-                                    </span>
-                                </div>
-                                
-                                {appointment.reason && (
-                                    <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
-                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason:</p>
-                                        <p className="text-gray-600 dark:text-gray-400">{appointment.reason}</p>
-                                    </div>
-                                )}
-                                
-                                {appointment.status === 'pending' && (
-                                    <div className="mt-4">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
-                                            Add a comment:
-                                        </label>
-                                        <textarea
-                                            className="w-full p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-3"
-                                            placeholder="Write a comment for the patient..."
-                                            value={appointment.comment || ""}
-                                            onChange={(e) => handleChangeComment(appointment._id, e)}
-                                            rows={3}
-                                        />
-                                    </div>
-                                )}
-                                
-                                {appointment.comment && appointment.status !== 'pending' && (
-                                    <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
-                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Doctor's comment:</p>
-                                        <p className="text-gray-600 dark:text-gray-400">{appointment.comment}</p>
-                                    </div>
-                                )}
-                                
-                                {appointment.notes && (
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
-                                        <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Medical notes:</p>
-                                        <p className="text-blue-600 dark:text-blue-400">{appointment.notes}</p>
-                                    </div>
-                                )}
-                                
-                                {/* Action buttons based on appointment status */}
-                                {appointment.status === 'pending' && (
-                                    <div className="flex gap-3 mt-4">
-                                        <button
-                                            onClick={() => handleUpdateAppointment(appointment, 'scheduled')}
-                                            className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <Check size={16} />
-                                            Accept
-                                        </button>
-                                        <button
-                                            onClick={() => handleUpdateAppointment(appointment, 'cancelled')}
-                                            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <X size={16} />
-                                            Decline
-                                        </button>
-                                    </div>
-                                )}
-                                
-                                {appointment.status === 'scheduled' && (
-                                    <button
-                                        onClick={() => handleUpdateAppointment(appointment, 'completed')}
-                                        className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 mt-4"
-                                    >
-                                        <Check size={16} />
-                                        Mark as Completed
-                                    </button>
-                                )}
-                            </div>
+
+                {filteredAppointments.length === 0 ? (
+                    <div className="text-center py-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border-2 border-gray-100 dark:border-gray-700">
+                        <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Calendar size={48} className="text-blue-600 dark:text-blue-400" />
                         </div>
-                    ))}
-                </div>
-            )}
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No appointments found</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg">
+                            {filter === 'pending' && "You have no pending appointment requests"}
+                            {filter === 'upcoming' && "You have no upcoming appointments"}
+                            {filter === 'active' && "You have no active appointments right now"}
+                            {filter === 'past' && "You have no past appointments"}
+                            {filter === 'all' && "You have no appointments yet"}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {filteredAppointments.map(appointment => (
+                            <div 
+                                key={appointment._id} 
+                                className="group relative"
+                            >
+                                {/* Hover glow effect */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-300"></div>
+                                
+                                {/* Card */}
+                                <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl border-2 border-gray-100 dark:border-gray-700 group-hover:border-blue-500 dark:group-hover:border-blue-500 overflow-hidden transition-all duration-300">
+                                    {/* Header */}
+                                    <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700/50 dark:to-gray-700/50 border-b-2 border-gray-100 dark:border-gray-700">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                                                    <User size={24} />
+                                                </div>
+                                                <span className="font-bold text-xl text-gray-900 dark:text-white">
+                                                    {typeof appointment.patientId === 'object' ? appointment.patientId.name : 'Unknown Patient'}
+                                                </span>
+                                            </div>
+                                            <span className={`px-4 py-2 rounded-xl text-sm font-bold border-2 ${getStatusBadgeColor(appointment.status)}`}>
+                                                {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Content */}
+                                    <div className="p-6 space-y-4">
+                                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                                            <Calendar size={20} className="text-blue-600 dark:text-blue-400" />
+                                            <span className="text-gray-900 dark:text-white font-medium">
+                                                {new Date(appointment.date).toLocaleDateString('en-US', { 
+                                                    weekday: 'long', 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                                            <Clock size={20} className="text-purple-600 dark:text-purple-400" />
+                                            <span className="text-gray-900 dark:text-white font-medium">
+                                                {appointment.startTime} - {appointment.endTime}
+                                            </span>
+                                        </div>
+                                        
+                                        {appointment.reason && (
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                                                <p className="text-sm font-bold text-blue-900 dark:text-blue-300 mb-2">Reason:</p>
+                                                <p className="text-gray-700 dark:text-gray-300">{appointment.reason}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {appointment.status === 'pending' && (
+                                            <div className="mt-4">
+                                                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-2">
+                                                    Add a comment:
+                                                </label>
+                                                <textarea
+                                                    className="w-full p-4 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200"
+                                                    placeholder="Write a comment for the patient..."
+                                                    value={appointment.comment || ""}
+                                                    onChange={(e) => handleChangeComment(appointment._id, e)}
+                                                    rows={3}
+                                                />
+                                            </div>
+                                        )}
+                                        
+                                        {appointment.comment && appointment.status !== 'pending' && (
+                                            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border-2 border-purple-200 dark:border-purple-800">
+                                                <p className="text-sm font-bold text-purple-900 dark:text-purple-300 mb-2">Doctor's comment:</p>
+                                                <p className="text-gray-700 dark:text-gray-300">{appointment.comment}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {appointment.notes && (
+                                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border-2 border-green-200 dark:border-green-800">
+                                                <p className="text-sm font-bold text-green-900 dark:text-green-300 mb-2">Medical notes:</p>
+                                                <p className="text-gray-700 dark:text-gray-300">{appointment.notes}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Action buttons based on appointment status */}
+                                        {appointment.status === 'pending' && (
+                                            <div className="flex gap-3 mt-6">
+                                                <button
+                                                    onClick={() => handleUpdateAppointment(appointment, 'scheduled')}
+                                                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-bold hover:from-green-600 hover:to-green-700 shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                                                >
+                                                    <Check size={20} />
+                                                    Accept
+                                                </button>
+                                                <button
+                                                    onClick={() => handleUpdateAppointment(appointment, 'cancelled')}
+                                                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-xl font-bold hover:from-red-600 hover:to-red-700 shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                                                >
+                                                    <X size={20} />
+                                                    Decline
+                                                </button>
+                                            </div>
+                                        )}
+                                        
+                                        {appointment.status === 'scheduled' && (
+                                            <button
+                                                onClick={() => handleUpdateAppointment(appointment, 'completed')}
+                                                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 mt-6"
+                                            >
+                                                <Check size={20} />
+                                                Mark as Completed
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
