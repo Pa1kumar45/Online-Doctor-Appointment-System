@@ -22,7 +22,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Stethoscope, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Stethoscope, Filter, X } from 'lucide-react';
 import { doctorService } from '../services/doctor.service';
 import { Doctor } from '../types/index.ts';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -35,36 +35,6 @@ const DoctorList = () => {
   const [selectedSpecialization, setSelectedSpecialization] = useState('');
   const [minExperience, setMinExperience] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const carouselImages = [
-    '/team-photo.jpg',
-    '/doc4.jpg',
-    '/doc2.jpg'
-  ];
-
-  // Auto-rotate carousel
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => 
-        prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
-      );
-    }, 4000); // Change image every 4 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const nextImage = () => {
-    setCurrentImageIndex((prevIndex) => 
-      prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
-    );
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prevIndex) => 
-      prevIndex === 0 ? carouselImages.length - 1 : prevIndex - 1
-    );
-  };
 
   // Load doctors on component mount
   useEffect(() => {
@@ -265,86 +235,6 @@ const DoctorList = () => {
           <p className="text-gray-600 dark:text-gray-400 text-lg">
             <span className="font-bold text-gray-900 dark:text-white">{filteredDoctors.length}</span> doctors found
           </p>
-        </div>
-
-        {/* Professional Review Section with Carousel */}
-        <div className="mb-12 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-3xl p-8 border-2 border-blue-200 dark:border-blue-900 shadow-xl">
-          <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
-            <div className="flex flex-col lg:flex-row items-center gap-8">
-              {/* Carousel Section */}
-              <div className="flex-shrink-0 relative">
-                <div className="relative w-[500px] h-[500px] overflow-hidden rounded-2xl shadow-2xl">
-                  {carouselImages.map((image, index) => (
-                    <img
-                      key={index}
-                      src={image}
-                      alt={`Medical Professional ${index + 1}`}
-                      className={`absolute top-0 left-0 w-full h-full object-cover transition-all duration-700 ease-in-out ${
-                        index === currentImageIndex
-                          ? 'opacity-100 scale-100'
-                          : 'opacity-0 scale-95'
-                      }`}
-                    />
-                  ))}
-                </div>
-                
-                {/* Carousel Controls */}
-                <button
-                  onClick={prevImage}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 bg-white dark:bg-gray-700 rounded-full p-3 shadow-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-110"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="w-8 h-8 text-gray-700 dark:text-gray-300" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 bg-white dark:bg-gray-700 rounded-full p-3 shadow-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-110"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="w-8 h-8 text-gray-700 dark:text-gray-300" />
-                </button>
-                
-                {/* Carousel Indicators */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-                  {carouselImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        index === currentImageIndex
-                          ? 'bg-blue-600 dark:bg-blue-400 w-10'
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      }`}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Content Section */}
-              <div className="flex-1">
-                <div className="mb-8">
-                  <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
-                    Reviewed by Professional Doctors
-                  </h2>
-                  <p className="text-lg text-gray-600 dark:text-gray-400">
-                    Our platform is trusted and reviewed by medical professionals
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Dr. Nithin</h3>
-                  <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full">
-                    MBBS
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">AJ COLLEGE, Mangalore</p>
-                <p className="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed">
-                  "This platform provides an excellent way for patients to connect with qualified doctors. 
-                  The interface is user-friendly and the appointment booking system is very efficient."
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Doctor Cards Grid */}

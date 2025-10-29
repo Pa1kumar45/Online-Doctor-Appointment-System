@@ -729,142 +729,202 @@ export const sendAppointmentAcceptanceEmail = async ({
         }
         .container {
           max-width: 600px;
-          margin: 40px auto;
-          background-color: #ffffff;
+          margin: 20px auto;
+          background: #ffffff;
           border-radius: 10px;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
           overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .header {
           background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-          color: white;
-          padding: 40px 30px;
+          color: #ffffff;
+          padding: 30px;
           text-align: center;
         }
         .header h1 {
           margin: 0;
           font-size: 28px;
-          font-weight: 600;
+        }
+        .header p {
+          margin: 10px 0 0 0;
+          font-size: 14px;
+          opacity: 0.9;
         }
         .content {
           padding: 40px 30px;
         }
-        .content p {
-          font-size: 16px;
-          margin: 15px 0;
-          color: #555;
+        .greeting {
+          font-size: 18px;
+          margin-bottom: 20px;
         }
         .success-box {
-          background-color: #d4edda;
-          border-left: 4px solid #28a745;
-          padding: 20px;
-          margin: 25px 0;
-          border-radius: 4px;
+          background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+          border: 2px solid #28a745;
+          border-radius: 8px;
+          padding: 25px;
           text-align: center;
+          margin: 30px 0;
         }
         .success-icon {
-          font-size: 48px;
-          margin-bottom: 10px;
+          font-size: 60px;
+          margin-bottom: 15px;
+          animation: bounce 1s ease infinite;
         }
-        .appointment-details {
-          background-color: #f8f9fa;
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .success-message {
+          font-size: 20px;
+          font-weight: 600;
+          color: #155724;
+          margin: 0;
+        }
+        .appointment-card {
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          border-radius: 12px;
           padding: 25px;
-          border-radius: 8px;
-          margin: 25px 0;
+          margin: 30px 0;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .detail-row {
+        .appointment-card h3 {
+          margin: 0 0 20px 0;
+          color: #28a745;
+          font-size: 18px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .detail-item {
           display: flex;
           justify-content: space-between;
-          padding: 12px 0;
-          border-bottom: 1px solid #e0e0e0;
+          padding: 15px;
+          margin: 10px 0;
+          background: white;
+          border-radius: 8px;
+          border-left: 4px solid #28a745;
+          transition: transform 0.2s;
         }
-        .detail-row:last-child {
-          border-bottom: none;
+        .detail-item:hover {
+          transform: translateX(5px);
         }
         .detail-label {
           font-weight: 600;
           color: #666;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
         .detail-value {
           color: #333;
+          font-weight: 500;
           text-align: right;
         }
-        .info-box {
-          background-color: #e3f2fd;
-          border-left: 4px solid #2196f3;
-          padding: 15px;
+        .info-banner {
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          border: 2px dashed #2196f3;
+          border-radius: 8px;
+          padding: 20px;
           margin: 25px 0;
-          border-radius: 4px;
         }
-        .info-box p {
-          margin: 5px 0;
-          font-size: 14px;
+        .info-banner h4 {
+          margin: 0 0 10px 0;
           color: #1565c0;
+          font-size: 16px;
+        }
+        .info-banner ul {
+          margin: 10px 0;
+          padding-left: 20px;
+          color: #1976d2;
+        }
+        .info-banner li {
+          margin: 8px 0;
+          font-size: 14px;
         }
         .footer {
-          background-color: #f8f9fa;
+          background: #f8f9fa;
           padding: 30px;
           text-align: center;
           color: #666;
           font-size: 14px;
+        }
+        .footer p {
+          margin: 5px 0;
+        }
+        .divider {
+          height: 2px;
+          background: linear-gradient(to right, transparent, #28a745, transparent);
+          margin: 30px 0;
         }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>✅ Appointment Confirmed!</h1>
+          <h1>🏥 HealthConnect</h1>
+          <p>Your Online Doctor Appointment System</p>
         </div>
         
         <div class="content">
-          <p>Dear <strong>${patientName}</strong>,</p>
+          <h2 class="greeting">Hello ${patientName}! 👋</h2>
           
           <div class="success-box">
-            <div class="success-icon">🎉</div>
-            <p style="margin: 0; font-size: 18px; font-weight: 600; color: #28a745;">
-              Your appointment request has been accepted!
-            </p>
+            <div class="success-icon"></div>
+            <p class="success-message">Your appointment request has been accepted!</p>
           </div>
           
-          <p>Great news! Dr. ${doctorName} has accepted your appointment request.</p>
+          <p style="font-size: 16px; color: #555;">Great news! Dr. ${doctorName} has confirmed your appointment. We look forward to your consultation.</p>
           
-          <div class="appointment-details">
-            <h3 style="margin-top: 0; color: #333;">📋 Appointment Details</h3>
-            <div class="detail-row">
-              <span class="detail-label">Doctor:</span>
+          <div class="appointment-card">
+            <h3>Appointment Details</h3>
+            
+            <div class="detail-item">
+              <span class="detail-label">Doctor :</span>
               <span class="detail-value">Dr. ${doctorName}</span>
             </div>
-            <div class="detail-row">
+            
+            <div class="detail-item">
               <span class="detail-label">Specialization:</span>
               <span class="detail-value">${doctorSpecialization}</span>
             </div>
-            <div class="detail-row">
+            
+            <div class="detail-item">
               <span class="detail-label">Date:</span>
               <span class="detail-value">${appointmentDate}</span>
             </div>
-            <div class="detail-row">
+            
+            <div class="detail-item">
               <span class="detail-label">Time:</span>
               <span class="detail-value">${appointmentTime}</span>
             </div>
           </div>
           
-          <div class="info-box">
-            <p><strong>📌 Important Reminders:</strong></p>
-            <p>• You will receive a reminder 15 minutes before your appointment</p>
-            <p>• Please be available at the scheduled time</p>
-            <p>• Prepare any questions you want to discuss with the doctor</p>
-          
+          <div class="info-banner">
+            <h4>Important Reminders</h4>
+            <ul>
+              <li>You will receive a reminder email 15 minutes before your appointment</li>
+              <li>Please be available at the scheduled time</li>
+  
+            </ul>
           </div>
           
-          <p>We look forward to seeing you!</p>
+          <div class="divider"></div>
           
-          <p>Best regards,<br><strong>HealthConnect Team</strong></p>
+          <p style="text-align: center; font-size: 16px; color: #555;">
+            We look forward to serving you!
+          </p>
+          
+          <p style="text-align: center; margin-top: 20px;">
+            Best regards,<br>
+            <strong style="color: #28a745;">HealthConnect Team</strong>
+          </p>
         </div>
         
         <div class="footer">
-          <p><strong>HealthConnect - Your Online Doctor Appointment System</strong></p>
-          <p>This is an automated email, please do not reply.</p>
-          <p>© 2025 HealthConnect. All rights reserved.</p>
+          <p><strong>HealthConnect</strong></p>
+          <p>Your trusted online healthcare platform</p>
+          <p style="margin-top: 15px;">© 2025 HealthConnect. All rights reserved.</p>
+          <p>This is an automated email. Please do not reply to this message.</p>
         </div>
       </div>
     </body>
@@ -943,139 +1003,271 @@ export const sendAppointmentReminderEmail = async ({
         }
         .container {
           max-width: 600px;
-          margin: 40px auto;
-          background-color: #ffffff;
+          margin: 20px auto;
+          background: #ffffff;
           border-radius: 10px;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
           overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .header {
           background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-          color: white;
-          padding: 40px 30px;
+          color: #ffffff;
+          padding: 30px;
           text-align: center;
         }
         .header h1 {
           margin: 0;
           font-size: 28px;
-          font-weight: 600;
+        }
+        .header p {
+          margin: 10px 0 0 0;
+          font-size: 14px;
+          opacity: 0.9;
         }
         .content {
           padding: 40px 30px;
         }
-        .content p {
-          font-size: 16px;
-          margin: 15px 0;
-          color: #555;
+        .greeting {
+          font-size: 18px;
+          margin-bottom: 20px;
         }
         .reminder-box {
-          background-color: #fff3e0;
-          border-left: 4px solid #ff9800;
-          padding: 20px;
-          margin: 25px 0;
-          border-radius: 4px;
+          background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+          border: 2px solid #ff9800;
+          border-radius: 8px;
+          padding: 25px;
           text-align: center;
+          margin: 30px 0;
+          position: relative;
+          overflow: hidden;
+        }
+        .reminder-box::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(255,152,0,0.1) 0%, transparent 70%);
+          animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.1); opacity: 0.8; }
         }
         .reminder-icon {
-          font-size: 48px;
-          margin-bottom: 10px;
+          font-size: 60px;
+          margin-bottom: 15px;
+          animation: ring 1s ease-in-out infinite;
+          position: relative;
+          z-index: 1;
         }
-        .appointment-details {
-          background-color: #f8f9fa;
+        @keyframes ring {
+          0%, 100% { transform: rotate(-10deg); }
+          25% { transform: rotate(10deg); }
+          50% { transform: rotate(-10deg); }
+          75% { transform: rotate(10deg); }
+        }
+        .reminder-message {
+          font-size: 20px;
+          font-weight: 600;
+          color: #e65100;
+          margin: 0;
+          position: relative;
+          z-index: 1;
+        }
+        .countdown {
+          display: inline-block;
+          background: #ff5722;
+          color: white;
+          padding: 8px 20px;
+          border-radius: 20px;
+          font-size: 16px;
+          font-weight: bold;
+          margin-top: 10px;
+          position: relative;
+          z-index: 1;
+        }
+        .appointment-card {
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          border-radius: 12px;
           padding: 25px;
-          border-radius: 8px;
-          margin: 25px 0;
+          margin: 30px 0;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .detail-row {
+        .appointment-card h3 {
+          margin: 0 0 20px 0;
+          color: #ff9800;
+          font-size: 18px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .detail-item {
           display: flex;
           justify-content: space-between;
-          padding: 12px 0;
-          border-bottom: 1px solid #e0e0e0;
+          padding: 15px;
+          margin: 10px 0;
+          background: white;
+          border-radius: 8px;
+          border-left: 4px solid #ff9800;
+          transition: transform 0.2s;
         }
-        .detail-row:last-child {
-          border-bottom: none;
+        .detail-item:hover {
+          transform: translateX(5px);
         }
         .detail-label {
           font-weight: 600;
           color: #666;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
         .detail-value {
           color: #333;
+          font-weight: 500;
           text-align: right;
         }
-        .urgent-box {
-          background-color: #ffebee;
-          border-left: 4px solid #f44336;
-          padding: 15px;
+        .urgent-banner {
+          background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+          border: 2px dashed #f44336;
+          border-radius: 8px;
+          padding: 20px;
           margin: 25px 0;
-          border-radius: 4px;
+          text-align: center;
         }
-        .urgent-box p {
-          margin: 5px 0;
-          font-size: 14px;
+        .urgent-banner h4 {
+          margin: 0 0 10px 0;
           color: #c62828;
-          font-weight: 600;
+          font-size: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+        .urgent-banner p {
+          margin: 8px 0;
+          color: #d32f2f;
+          font-size: 15px;
+          font-weight: 500;
+        }
+        .checklist {
+          background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+          border-radius: 8px;
+          padding: 20px;
+          margin: 25px 0;
+        }
+        .checklist h4 {
+          margin: 0 0 15px 0;
+          color: #2e7d32;
+          font-size: 16px;
+        }
+        .checklist-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 10px 0;
+          color: #388e3c;
+          font-size: 14px;
+        }
+        .checklist-item::before {
+          content: '✓';
+          background: #4caf50;
+          color: white;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          flex-shrink: 0;
         }
         .footer {
-          background-color: #f8f9fa;
+          background: #f8f9fa;
           padding: 30px;
           text-align: center;
           color: #666;
           font-size: 14px;
+        }
+        .footer p {
+          margin: 5px 0;
+        }
+        .divider {
+          height: 2px;
+          background: linear-gradient(to right, transparent, #ff9800, transparent);
+          margin: 30px 0;
         }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>⏰ Appointment Reminder</h1>
+          <h1>🏥 HealthConnect</h1>
+          <p>Your Online Doctor Appointment System</p>
         </div>
         
         <div class="content">
-          <p>Dear <strong>${patientName}</strong>,</p>
+          <h2 class="greeting">Hello ${patientName}! 👋</h2>
           
           <div class="reminder-box">
-            <div class="reminder-icon">🔔</div>
-            <p style="margin: 0; font-size: 18px; font-weight: 600; color: #e65100;">
-              Your appointment is starting in 15 minutes!
-            </p>
+            
+            <p class="reminder-message">Your appointment is starting soon!</p>
+            <div class="countdown">In 15 minutes</div>
           </div>
           
-          <p>This is a friendly reminder about your upcoming appointment with Dr. ${doctorName}.</p>
+          <p style="font-size: 16px; color: #555; text-align: center;">
+            This is a friendly reminder about your upcoming consultation with <strong>Dr. ${doctorName}</strong>.
+          </p>
           
-          <div class="appointment-details">
-            <h3 style="margin-top: 0; color: #333;">📋 Appointment Details</h3>
-            <div class="detail-row">
+          <div class="appointment-card">
+            <h3>📋 Appointment Details</h3>
+            
+            <div class="detail-item">
               <span class="detail-label">Doctor:</span>
               <span class="detail-value">Dr. ${doctorName}</span>
             </div>
-            <div class="detail-row">
+            
+            <div class="detail-item">
               <span class="detail-label">Specialization:</span>
               <span class="detail-value">${doctorSpecialization}</span>
             </div>
-            <div class="detail-row">
+            
+            <div class="detail-item">
               <span class="detail-label">Date:</span>
               <span class="detail-value">${appointmentDate}</span>
             </div>
-            <div class="detail-row">
+            
+            <div class="detail-item">
               <span class="detail-label">Time:</span>
               <span class="detail-value">${appointmentTime}</span>
             </div>
           </div>
           
-          <div class="urgent-box">
-            <p>⚠️ Please be ready for your appointment!</p>
+          <div class="urgent-banner">
+            <h4>Please Be Ready!</h4>
+            <p>Ensure you are available at the scheduled time</p>
+           
           </div>
           
-          <p>Please ensure you are available at the scheduled time.</p>
           
-          <p>Best regards,<br><strong>HealthConnect Team</strong></p>
+          <div class="divider"></div>
+          
+          <p style="text-align: center; font-size: 16px; color: #555;">
+            Thank you for choosing HealthConnect!
+          </p>
+          
+          <p style="text-align: center; margin-top: 20px;">
+            Best regards,<br>
+            <strong style="color: #ff9800;">HealthConnect Team</strong>
+          </p>
         </div>
         
         <div class="footer">
-          <p><strong>HealthConnect - Your Online Doctor Appointment System</strong></p>
-          <p>This is an automated email, please do not reply.</p>
-          <p>© 2025 HealthConnect. All rights reserved.</p>
+          <p><strong>HealthConnect</strong></p>
+          <p>Your trusted online healthcare platform</p>
+          <p style="margin-top: 15px;">© 2025 HealthConnect. All rights reserved.</p>
+          <p>This is an automated email. Please do not reply to this message.</p>
         </div>
       </div>
     </body>
