@@ -84,11 +84,7 @@ const Homepage = () => {
           
           <h1 className="text-6xl md:text-8xl font-black mb-8 leading-tight">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Your Health,
-            </span>
-            <br />
-            <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-              Our Priority
+              Your Health, Our Priority
             </span>
           </h1>
           
@@ -111,6 +107,49 @@ const Homepage = () => {
             >
               Get Started
             </Link>
+          </div>
+        </div>
+
+        {/* Professional Review Section */}
+        <div className="mt-24 mb-20">
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-3xl p-8 border-2 border-blue-200 dark:border-blue-900 shadow-xl">
+            <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col lg:flex-row items-center gap-8">
+                {/* Image Section */}
+                <div className="flex-shrink-0">
+                  <div className="relative w-full lg:w-[400px] h-[400px] overflow-hidden rounded-2xl shadow-2xl">
+                    <img
+                      src="/team-photo.jpg"
+                      alt="Medical Professional"
+                      className="absolute top-0 left-0 w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                
+                {/* Content Section */}
+                <div className="flex-1">
+                  <div className="mb-8">
+                    <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
+                      Reviewed by Professional Doctors
+                    </h2>
+                    <p className="text-lg text-gray-600 dark:text-gray-400">
+                      Our platform is trusted and reviewed by medical professionals
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Dr. Nithin</h3>
+                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full">
+                      MBBS
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">AJ COLLEGE, Mangalore</p>
+                  <p className="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed">
+                    "This platform provides an excellent way for patients to connect with qualified doctors. 
+                    The interface is user-friendly and the appointment booking system is very efficient."
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -244,49 +283,6 @@ const Homepage = () => {
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                   Meet your doctor at the scheduled time and receive the care you need
                 </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Professional Review Section */}
-        <div className="mt-32 mb-20">
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-3xl p-8 border-2 border-blue-200 dark:border-blue-900 shadow-xl">
-            <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
-              <div className="flex flex-col lg:flex-row items-center gap-8">
-                {/* Image Section */}
-                <div className="flex-shrink-0">
-                  <div className="relative w-full lg:w-[400px] h-[400px] overflow-hidden rounded-2xl shadow-2xl">
-                    <img
-                      src="/team-photo.jpg"
-                      alt="Medical Professional"
-                      className="absolute top-0 left-0 w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-                
-                {/* Content Section */}
-                <div className="flex-1">
-                  <div className="mb-8">
-                    <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
-                      Reviewed by Professional Doctors
-                    </h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-400">
-                      Our platform is trusted and reviewed by medical professionals
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Dr. Nithin</h3>
-                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full">
-                      MBBS
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">AJ COLLEGE, Mangalore</p>
-                  <p className="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed">
-                    "This platform provides an excellent way for patients to connect with qualified doctors. 
-                    The interface is user-friendly and the appointment booking system is very efficient."
-                  </p>
-                </div>
               </div>
             </div>
           </div>
